@@ -1,47 +1,26 @@
 package firewallServer;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.util.StringTokenizer;
+import java.io.InputStream;
 
-public class Nope implements NioEventHandler {
-	private AsynchronousSocketChannel channel;
+public class Nope implements EventHandler {
 	
-	public String getHandle() {
+	private static final int DATA_SIZE = 512;
+    
+	public String getHandler() {
 		return "NULL";
 	}
-
-	public int getDataSize() {
-		return 512;
-	}
 	
-	public void initialize(AsynchronousSocketChannel channel) {
-		this.channel = channel;
-	}
-	
-	public void completed(Integer result, ByteBuffer buffer) {
-		if (result == -1) {
-			try {
-				channel.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		} else if (result > 0) {
-			buffer.flip();
-			String msg = new String(buffer.array());
-	        
-            System.out.println(msg);
+	public void handleEvent(InputStream inputStream) {
+		
+		try {
+			byte[] buffer = new byte[DATA_SIZE];
+			inputStream.read(buffer);
+			String data = new String(buffer);
 
-	        try {
-	        	buffer.clear();
-				channel.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+            System.out.println(data);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-	}
-
-	public void failed(Throwable exc, ByteBuffer attachment) {
 	}
 }

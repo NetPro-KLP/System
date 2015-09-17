@@ -14,7 +14,7 @@ import org.simpleframework.xml.core.Persister;
 
 import webServer.WebServer;
 import firewallServer.FirewallServer;
-import firewallServer.NioEventHandler;
+import firewallServer.EventHandler;
 
 public class ServerInitializer {
 
@@ -32,7 +32,11 @@ public class ServerInitializer {
             ArrayList<Handle> handlers = getHandlerList(serverName);
 
             for (Handle handler : handlers) {
-                firewallServer.registerHandler(handler.getHeader(), handler.getClassName());
+                try {
+                    firewallServer.registerHandler(handler.getHeader(), (EventHandler)Class.forName( handler.getClassName() ).newInstance());
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
 
             firewallServer.startServer();
