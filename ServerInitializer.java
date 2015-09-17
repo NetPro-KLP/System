@@ -1,3 +1,8 @@
+import xmlReader.Handle;
+import xmlReader.HandlerData;
+import xmlReader.HandlerListData;
+import xmlReader.ServerListData;
+
 import java.util.ArrayList;
 
 import webServer.WebServer;
@@ -16,6 +21,8 @@ public class ServerInitializer {
         if ("firewall".equals(serverName)) {
             FirewallServer firewallServer = new FirewallServer(firewallPort);
 
+            ArrayList<Handle> handlers = getHandlerList(serverName);
+
             firewallServer.startServer();
         }
         else if ("web".equals(serverName)) {
@@ -25,5 +32,11 @@ public class ServerInitializer {
             System.out.println("\t java ServerInitializer web\n");
             System.exit(1);
         }
+    }
+
+    private static ArrayList<Handle> getHandlerList(String serverName) {
+        ArrayList<Handle> handlers = new ArrayList<Handle>();
+
+        return handlers;
     }
 }

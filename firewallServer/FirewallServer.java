@@ -29,7 +29,7 @@ public class FirewallServer {
             // 초기에 initialSize만큼 스레드를 만들고 새 스레드는 필요한 만큼 생성한다.
             AsynchronousChannelGroup group = AsynchronousChannelGroup.withCachedThreadPool(executor, initialSize);
 
-            // 모니터링 스레드 생성
+            // 모니터링 스레드 생성(2번째 인자는 콘솔 출력 delay(초))
             MyMonitorThread monitor = new MyMonitorThread(executor, 1);
             Thread monitorThread = new Thread(monitor);
             monitorThread.start();
