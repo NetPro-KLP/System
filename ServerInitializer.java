@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 import webServer.WebServer;
 import firewallServer.FirewallServer;
 
@@ -12,6 +14,9 @@ public class ServerInitializer {
         String serverName = args[0];
 
         if ("firewall".equals(serverName)) {
+            FirewallServer firewallServer = new FirewallServer(firewallPort);
+
+            firewallServer.startServer();
         }
         else if ("web".equals(serverName)) {
         }
