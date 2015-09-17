@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<serverList>
+	<server name="web">
+		<handler header="NULL">webServer.Nope</handler>
+	</server>
+	<server name="firewall">
+		<handler header="NULL">firewallServer.Nope</handler>
+	</server>
+</serverList>
