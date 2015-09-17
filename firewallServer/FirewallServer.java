@@ -30,7 +30,7 @@ public class FirewallServer {
             AsynchronousChannelGroup group = AsynchronousChannelGroup.withCachedThreadPool(executor, initialSize);
 
             // 모니터링 스레드 생성(2번째 인자는 콘솔 출력 delay(초))
-            MyMonitorThread monitor = new MyMonitorThread(executor, 1);
+            MyMonitorThread monitor = new MyMonitorThread(executor, 10);
             Thread monitorThread = new Thread(monitor);
             monitorThread.start();
 
