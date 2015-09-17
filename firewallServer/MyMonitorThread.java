@@ -30,7 +30,7 @@ public class MyMonitorThread implements Runnable
                 		 String.format("[monitor] [%d/%d], Active: %d, Completed: %d, Task: %d, isShutdown: %s, isTerminated: %s",
                         this.executor.getPoolSize(),    // 대기 + 실행중
                         this.executor.getCorePoolSize(),  // max
-                        this.executor.getActiveCount(),   // 실행중인 thread       ->0
+                        this.executor.getActiveCount(),   // 실행중인 thread
                         this.executor.getCompletedTaskCount(),  // 완료된 작업의 누적 수
                         this.executor.getTaskCount(),			// 완료된 + 실행중 작업의 수
                         this.executor.isShutdown(),
