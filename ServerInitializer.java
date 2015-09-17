@@ -2,6 +2,7 @@ import webServer.WebServer;
 import firewallServer.FirewallServer;
 
 public class ServerInitializer {
+
     public static void main (String[] args) {
         if (args.length != 1)
             System.exit(1);
