@@ -42,6 +42,7 @@ public class ServerInitializer {
             firewallServer.startServer();
         }
         else if ("web".equals(serverName)) {
+		WebServer webServer = new WebServer(webPort);
         }
         else {
             System.out.println("Usage\n\t java ServerInitializer firewall");
