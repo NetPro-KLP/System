@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec java -cp ".;./serverStarter;./firewallServer:./webServer:./lib/simple-xml-2.7.1.jar:" serverStarter/ServerInitializer web
