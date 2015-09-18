@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ThreadPerDispatcher implements Dispatcher {
+public class ThreadPerDispatcher {
 	
 	public void dispatch(ServerSocket serverSocket) {
 		while( true ) {

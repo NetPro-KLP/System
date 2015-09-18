@@ -21,7 +21,6 @@ public class Demultiplexer implements Runnable {
 			byte[] buffer = new byte[HEADER_SIZE];
 			inputStream.read(buffer);
 			String header = new String(buffer);
-            System.out.println(header);
             EventHandler eventHandler = new EventHandler();
 
             switch(header) {

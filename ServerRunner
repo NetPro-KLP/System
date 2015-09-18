@@ -1,3 +1,3 @@
 #!/bin/bash
 
-(exec java serverStarter/ServerInitializer firewall) & (exec java serverStarter/ServerInitializer web)
+(exec java serverStarter/ServerInitializer web) & (exec java serverStarter/ServerInitializer firewall)

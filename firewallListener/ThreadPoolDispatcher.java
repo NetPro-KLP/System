@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class ThreadPoolDispatcher implements Dispatcher {
+public class ThreadPoolDispatcher {
 	
     static final String NUMTHREADS = "10";
     static final String THREADPROP = "Threads";
@@ -16,6 +16,8 @@ public class ThreadPoolDispatcher implements Dispatcher {
     }
     
 	public void dispatch(final ServerSocket serverSocket) {
+        System.out.println("FirewallListener ThreadPool Size: " + Integer.toString(numThreads));
+
         for (int i = 0; i < (numThreads - 1); i++) {
             Thread thread = new Thread() {
                 public void run() {
@@ -29,9 +31,9 @@ public class ThreadPoolDispatcher implements Dispatcher {
 	}
 	
     private void dispatchLoop(ServerSocket serverSocket) {
-    	
+
     	while( true ) {
-    		
+
 			try {
 				Socket socket = serverSocket.accept();
 				Runnable demultiplexer = new Demultiplexer(socket);
