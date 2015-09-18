@@ -1,12 +1,12 @@
-package firewallServer;
+package firewallListener;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 
-public class FirewallServer {
+public class FirewallListener {
     private ServerSocket serverSocket;
     
-    public FirewallServer(int port) {
+    public FirewallListener(int port) {
         try {
 			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {

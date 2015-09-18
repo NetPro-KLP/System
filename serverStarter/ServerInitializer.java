@@ -1,18 +1,10 @@
 package serverStarter;
 
-import xmlReader.Handle;
-import xmlReader.HandlerData;
-import xmlReader.HandlerListData;
-import xmlReader.ServerListData;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
-
-import firewallServer.FirewallServer;
+import firewallListener.FirewallListener;
 
 public class ServerInitializer {
 
@@ -25,9 +17,9 @@ public class ServerInitializer {
         String serverName = args[0];
 
         if ("firewall".equals(serverName)) {
-            FirewallServer firewallServer = new FirewallServer(firewallPort);
+            FirewallListener firewallListener = new FirewallListener(firewallPort);
 
-            firewallServer.startServer();
+            firewallListener.startServer();
         }
         else if ("web".equals(serverName)) {
         }
