@@ -76,7 +76,6 @@ public class ThreadPoolDispatcher {
                 String payload = new String(payloadBuffer);
 
                 queue.offer(headerSize + header + payloadSize + payload);
-                String a = queue.poll();
 
                 socket.close();
             } catch (IOException e) {
