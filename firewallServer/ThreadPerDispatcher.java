@@ -6,12 +6,12 @@ import java.net.Socket;
 
 public class ThreadPerDispatcher implements Dispatcher {
 	
-	public void dispatch(ServerSocket serverSocket, HandleMap handleMap) {
+	public void dispatch(ServerSocket serverSocket) {
 		while( true ) {
 			try {
 				Socket socket = serverSocket.accept();
 				
-				Runnable demultiplexer = new Demultiplexer(socket, handleMap);
+				Runnable demultiplexer = new Demultiplexer(socket);
 	            Thread thread = new Thread(demultiplexer);
 	            thread.start();
 	            

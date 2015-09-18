@@ -1,10 +1,21 @@
 package firewallServer;
 
+import java.io.IOException;
 import java.io.InputStream;
 
-public interface EventHandler {
-	
-	public String getHandler();
-	
-	public void handleEvent(InputStream inputStream);
+public class EventHandler {
+
+    private static final int DATA_SIZE = 512;
+
+	public void NopeEvent(InputStream inputStream) {
+        try {
+            byte[] buffer = new byte[DATA_SIZE];
+            inputStream.read(buffer);
+            String data = new String(buffer);
+
+            System.out.println(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

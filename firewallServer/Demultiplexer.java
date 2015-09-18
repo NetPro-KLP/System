@@ -9,11 +9,9 @@ public class Demultiplexer implements Runnable {
 	private final int HEADER_SIZE = 4;
 	
 	private Socket socket;
-	private HandleMap handleMap;
 	
-	public Demultiplexer(Socket socket, HandleMap handleMap) {
+	public Demultiplexer(Socket socket) {
 		this.socket = socket;
-		this.handleMap = handleMap;
 	}
 	
 	public void run() {
@@ -24,8 +22,15 @@ public class Demultiplexer implements Runnable {
 			inputStream.read(buffer);
 			String header = new String(buffer);
             System.out.println(header);
-            System.out.println("");
-			handleMap.get(header).handleEvent(inputStream);
+            EventHandler eventHandler = new EventHandler();
+
+            switch(header) {
+                case "NULL":
+                    eventHandler.NopeEvent(inputStream);
+                    break;
+                default:
+                    break;
+            }
 			
 			socket.close();
 		} catch (IOException e) {

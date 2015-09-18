@@ -1,4 +1,3 @@
 #!/bin/bash
 
 (exec javac -cp "..:../serverStarter:../firewallServer:../webServer:../lib/simple-xml-2.7.1.jar:" ../serverStarter/ServerInitializer.java)
-(exec javac -cp "..:" ../firewallServer/*.java)
