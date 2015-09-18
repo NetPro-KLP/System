@@ -22,6 +22,7 @@ public class ServerInitializer {
             firewallListener.startServer();
         }
         else if ("web".equals(serverName)) {
+            System.out.println("web");
         }
         else {
             System.out.println("Usage\n\t java ServerInitializer firewall");
