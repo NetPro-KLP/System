@@ -11,15 +11,18 @@ import java.util.LinkedList;
 
 public class ThreadPoolDispatcher {
 	
-    static final String QUEUENUMTHREADS = "10";
-    static final String DISPATCHNUMTHREADS = "15";
+    static final String QUEUENUMTHREADS = "1";
+    static final String DISPATCHNUMTHREADS = "5";
     static final String THREADPROP = "Threads";
 
+    // 패킷디스패치 루프의 슬립 타입을 '초' 단위로 지정
+    private static final double PACKETDISPATCHLOOP_SLEEPTIME = 0.3;
     private final int HEADER_SIZE = 4;
     private int queueNumThreads;
     private int dispatchNumThreads;
 
     private Queue<String> queue = new LinkedList<String>();
+    private boolean isDispatchLoopOk = true;
 
     public ThreadPoolDispatcher() {
         queueNumThreads = Integer.parseInt(System.getProperty(THREADPROP, QUEUENUMTHREADS));
@@ -32,7 +35,7 @@ public class ThreadPoolDispatcher {
         for (int i = 0; i < queueNumThreads; i++) {
             Thread thread = new Thread() {
                 public void run() {
-                    QueueListener(serverSocket);
+                    queueListenerLoop(serverSocket);
                 }
             };
             thread.start();
@@ -43,16 +46,16 @@ public class ThreadPoolDispatcher {
         for (int i = 0; i < (dispatchNumThreads - 1); i++) {
             Thread thread = new Thread() {
                 public void run() {
-                    dispatchLoop();
+                    packetDispatchLoop();
                 }
             };
             thread.start();
         }
 
-        dispatchLoop();
+        packetDispatchLoop();
 	}
 	
-    private void QueueListener(ServerSocket serverSocket) {
+    private void queueListenerLoop(ServerSocket serverSocket) {
         while( true ) {
 
             try {
@@ -75,7 +78,7 @@ public class ThreadPoolDispatcher {
                 inputStream.read(payloadBuffer);
                 String payload = new String(payloadBuffer);
 
-                queue.offer(headerSize + header + payloadSize + payload);
+                queue.offer(headerSize + "|" + header + "|" + payloadSize + "|" + payload);
 
                 socket.close();
             } catch (IOException e) {
@@ -84,17 +87,32 @@ public class ThreadPoolDispatcher {
         }
     }
 
-    private void dispatchLoop() {
-/*
+    private void packetDispatchLoop() {
+
     	while( true ) {
 
-			try {
-				Runnable demultiplexer = new Demultiplexer(socket);
-	        	demultiplexer.run();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+//			try {
+                if (queue.size() > 0 && isDispatchLoopOk) {
+                    isDispatchLoopOk = false;
+                    String packet = queue.poll();
+                    isDispatchLoopOk = true;
+                    System.out.println("-----");
+                    System.out.println(packet);
+                    if (packet != null) {
+				        Runnable eventDemultiplexer = new EventDemultiplexer(/*socket,*/ packet);
+	        	        eventDemultiplexer.run();
+                    }
+                }
+                else {
+                    try {
+                        Thread.sleep((long)(PACKETDISPATCHLOOP_SLEEPTIME*1000));
+                    } catch(InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
         }
-    */
     }
 }
