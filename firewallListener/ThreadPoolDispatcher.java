@@ -96,8 +96,7 @@ public class ThreadPoolDispatcher {
                     isDispatchLoopOk = false;
                     String packet = queue.poll();
                     isDispatchLoopOk = true;
-                    System.out.println("-----");
-                    System.out.println(packet);
+
                     if (packet != null) {
 				        Runnable eventDemultiplexer = new EventDemultiplexer(/*socket,*/ packet);
 	        	        eventDemultiplexer.run();
