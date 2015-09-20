@@ -21,7 +21,7 @@ public class ThreadPoolDispatcher {
     private int queueNumThreads;
     private int dispatchNumThreads;
 
-    private Queue<String> queue = new LinkedList<String>();
+    private Queue<QueueListenedInfo> queue = new LinkedList<QueueListenedInfo>();
     private boolean isDispatchLoopOk = true;
 
     public ThreadPoolDispatcher() {
@@ -78,9 +78,8 @@ public class ThreadPoolDispatcher {
                 inputStream.read(payloadBuffer);
                 String payload = new String(payloadBuffer);
 
-                queue.offer(headerSize + "|" + header + "|" + payloadSize + "|" + payload);
+                queue.offer(new QueueListenedInfo(socket, headerSize + "|" + header + "|" + payloadSize + "|" + payload));
 
-                socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -91,27 +90,23 @@ public class ThreadPoolDispatcher {
 
     	while( true ) {
 
-//			try {
-                if (queue.size() > 0 && isDispatchLoopOk) {
-                    isDispatchLoopOk = false;
-                    String packet = queue.poll();
-                    isDispatchLoopOk = true;
+            if (queue.size() > 0 && isDispatchLoopOk) {
+                isDispatchLoopOk = false;
+                QueueListenedInfo receivedInfo = queue.poll();
+                isDispatchLoopOk = true;
 
-                    if (packet != null) {
-				        Runnable eventDemultiplexer = new EventDemultiplexer(/*socket,*/ packet);
-	        	        eventDemultiplexer.run();
-                    }
+                if (receivedInfo != null) {
+				    Runnable eventDemultiplexer = new EventDemultiplexer(receivedInfo);
+	        	    eventDemultiplexer.run();
                 }
-                else {
-                    try {
-                        Thread.sleep((long)(PACKETDISPATCHLOOP_SLEEPTIME*1000));
-                    } catch(InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            }
+            else {
+                try {
+                    Thread.sleep((long)(PACKETDISPATCHLOOP_SLEEPTIME*1000));
+                } catch(InterruptedException e) {
+                    e.printStackTrace();
                 }
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
+            }
         }
     }
 }

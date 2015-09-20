@@ -5,17 +5,15 @@ import java.net.Socket;
 
 public class EventDemultiplexer implements Runnable {
 
-//    private Socket socket;
-    private String packet;
+    private QueueListenedInfo receivedInfo;
 	
-	public EventDemultiplexer(/*Socket socket,*/ String packet) {
-        //this.socket = socket;
-        this.packet = packet;
+	public EventDemultiplexer(QueueListenedInfo receivedInfo) {
+        this.receivedInfo = receivedInfo;
 	}
 	
 	public void run() {
 
-        PacketAnalyzer packetAnalyzer = new PacketAnalyzer(packet);
+        PacketAnalyzer packetAnalyzer = new PacketAnalyzer(receivedInfo.getPacket());
 
         String header = packetAnalyzer.getHeader();
         String code = packetAnalyzer.getCode();
