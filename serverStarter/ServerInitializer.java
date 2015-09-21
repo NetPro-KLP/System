@@ -1,33 +1,35 @@
 package serverStarter;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
+
+import java.net.Socket;
 
 import firewallListener.FirewallListener;
 
 public class ServerInitializer {
 
     public static void main (String[] args) {
-        if (args.length != 1)
-            System.exit(1);
-
         int firewallPort = 30000;
         int webPort = 20000;
-        String serverName = args[0];
 
-        if ("firewall".equals(serverName)) {
-            FirewallListener firewallListener = new FirewallListener(firewallPort);
+        System.out.println("Firewall, Web Listener now operate.");
+        System.out.println("Firewall Listener Port: " + Integer.toString(firewallPort));
+        System.out.println("Web Listener Port: " + Integer.toString(webPort));
 
-            firewallListener.startServer();
-        }
-        else if ("web".equals(serverName)) {
-            System.out.println("web");
-        }
-        else {
-            System.out.println("Usage\n\t java ServerInitializer firewall");
-            System.out.println("\t java ServerInitializer web\n");
-            System.exit(1);
-        }
+        FirewallListener firewallListener = new FirewallListener(firewallPort);
+        firewallListener.startServer();
+        /*
+        Thread firewallListenerThread = new Thread() {
+            public void run() {
+                FirewallListener firewallListener = new FirewallListener(firewallPort);
+                firewallListener.startServer();
+            }
+        };
+        firewallListenerThread.start();
+
+        WebListener webListener = new WebListener();
+        webListener.startServer();
+        */
     }
 }

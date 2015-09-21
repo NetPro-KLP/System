@@ -1,3 +1,0 @@
-#!/bin/bash
-(exec rm ../firewallListener/*.class)
-(exec javac -cp "..;" ../serverStarter/ServerInitializer.java)

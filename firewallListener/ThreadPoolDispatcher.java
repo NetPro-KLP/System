@@ -21,7 +21,7 @@ public class ThreadPoolDispatcher {
     private int queueNumThreads;
     private int dispatchNumThreads;
 
-    private Queue<QueueListenedInfo> queue = new LinkedList<QueueListenedInfo>();
+    private Queue<String> queue = new LinkedList<String>();
     private boolean isDispatchLoopOk = true;
 
     public ThreadPoolDispatcher() {
@@ -60,8 +60,12 @@ public class ThreadPoolDispatcher {
 
             try {
                 Socket socket = serverSocket.accept();
+
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
                 int headerSize = dataInputStream.readInt();
+
+                dataInputStream = new DataInputStream(socket.getInputStream());
+                int payloadSize = dataInputStream.readInt();
 
                 InputStream inputStream = socket.getInputStream();
 
@@ -69,16 +73,13 @@ public class ThreadPoolDispatcher {
                 inputStream.read(headerBuffer);
                 String header = new String(headerBuffer);
 
-                dataInputStream = new DataInputStream(socket.getInputStream());
-                int payloadSize = dataInputStream.readInt();
-
-                inputStream =socket.getInputStream();
+                inputStream = socket.getInputStream();
 
                 byte[] payloadBuffer = new byte[payloadSize];
                 inputStream.read(payloadBuffer);
                 String payload = new String(payloadBuffer);
 
-                queue.offer(new QueueListenedInfo(socket, headerSize + "|" + header + "|" + payloadSize + "|" + payload));
+                queue.offer(headerSize + "|" + payloadSize + "|" + header + "|" + payload);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -92,11 +93,11 @@ public class ThreadPoolDispatcher {
 
             if (queue.size() > 0 && isDispatchLoopOk) {
                 isDispatchLoopOk = false;
-                QueueListenedInfo receivedInfo = queue.poll();
+                String packet = queue.poll();
                 isDispatchLoopOk = true;
 
-                if (receivedInfo != null) {
-				    Runnable eventDemultiplexer = new EventDemultiplexer(receivedInfo);
+                if (packet != null) {
+				    Runnable eventDemultiplexer = new EventDemultiplexer(packet);
 	        	    eventDemultiplexer.run();
                 }
             }

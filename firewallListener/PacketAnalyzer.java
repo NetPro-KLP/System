@@ -6,8 +6,8 @@ public class PacketAnalyzer {
 
     private String packet;
     private int headerSize;
-    private String header;
     private int payloadSize;
+    private String header;
     private String code;
     private String reqRes;
     private String firewall;
@@ -20,9 +20,9 @@ public class PacketAnalyzer {
         if (token.hasMoreTokens())
             this.headerSize = Integer.parseInt(token.nextToken());
         if (token.hasMoreTokens())
-            this.header = token.nextToken();
-        if (token.hasMoreTokens())
             this.payloadSize = Integer.parseInt(token.nextToken());
+        if (token.hasMoreTokens())
+            this.header = token.nextToken();
         if (token.hasMoreTokens()) {
             String payload = token.nextToken();
 
