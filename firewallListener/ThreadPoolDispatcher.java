@@ -12,7 +12,7 @@ import java.util.LinkedList;
 public class ThreadPoolDispatcher {
 	
     static final String QUEUENUMTHREADS = "1";
-    static final String DISPATCHNUMTHREADS = "5";
+    static final String DISPATCHNUMTHREADS = "1";
     static final String THREADPROP = "Threads";
 
     // 패킷디스패치 루프의 슬립 타입을 '초' 단위로 지정
@@ -22,7 +22,7 @@ public class ThreadPoolDispatcher {
     private int dispatchNumThreads;
 
     private Queue<String> queue = new LinkedList<String>();
-    private boolean isDispatchLoopOk = true;
+    private int Semaphore = 1;
 
     public ThreadPoolDispatcher() {
         queueNumThreads = Integer.parseInt(System.getProperty(THREADPROP, QUEUENUMTHREADS));
@@ -81,6 +81,7 @@ public class ThreadPoolDispatcher {
 
                 queue.offer(headerSize + "|" + payloadSize + "|" + header + "|" + payload);
 
+                socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -91,10 +92,8 @@ public class ThreadPoolDispatcher {
 
     	while( true ) {
 
-            if (queue.size() > 0 && isDispatchLoopOk) {
-                isDispatchLoopOk = false;
+            if (queue.peek() != null) {
                 String packet = queue.poll();
-                isDispatchLoopOk = true;
 
                 if (packet != null) {
 				    Runnable eventDemultiplexer = new EventDemultiplexer(packet);
