@@ -15,14 +15,13 @@ public class Dispatcher {
     static final String DISPATCHNUMTHREADS = "10";
     static final String THREADPROP = "Threads";
 
-    // 패킷디스패치 루프의 슬립 타입을 '초' 단위로 지정
-    private static final double PACKETDISPATCHLOOP_SLEEPTIME = 0.3;
+    // 패킷디스패치 루프의 슬립 타입을 'ms' 단위로 지정
+    private static final int PACKETDISPATCHLOOP_SLEEPTIME = 50;
     private final int HEADER_SIZE = 4;
     private int queueNumThreads;
     private int dispatchNumThreads;
 
     private Queue<QueueListenedInfo> queue = new ConcurrentLinkedQueue<QueueListenedInfo>();
-    //private Queue<QueueListenedInfo> queue = new LinkedList<QueueListenedInfo>();
 
     public Dispatcher() {
         queueNumThreads = Integer.parseInt(System.getProperty(THREADPROP, QUEUENUMTHREADS));
@@ -102,7 +101,7 @@ public class Dispatcher {
             }
             else {
                 try {
-                    Thread.sleep((long)(PACKETDISPATCHLOOP_SLEEPTIME*1000));
+                    Thread.sleep(PACKETDISPATCHLOOP_SLEEPTIME);
                 } catch(InterruptedException e) {
                     e.printStackTrace();
                 }
