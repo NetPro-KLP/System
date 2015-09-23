@@ -3,12 +3,12 @@ package firewallListener;
 import java.io.IOException;
 import java.net.Socket;
 
-public class EventDemultiplexer implements Runnable {
+public class Demultiplexer implements Runnable {
 
     private Socket socket;
     private String packet;
 	
-	public EventDemultiplexer(QueueListenedInfo receivedInfo) {
+	public Demultiplexer(QueueListenedInfo receivedInfo) {
         this.socket = receivedInfo.getSocket();
         this.packet = receivedInfo.getPacket();
 	}

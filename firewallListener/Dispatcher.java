@@ -96,8 +96,8 @@ public class Dispatcher {
                 QueueListenedInfo receivedInfo = queue.poll();
 
                 if (receivedInfo != null) {
-				    Runnable eventDemultiplexer = new EventDemultiplexer(receivedInfo);
-	        	    eventDemultiplexer.run();
+				    Runnable demultiplexer = new Demultiplexer(receivedInfo);
+	        	    demultiplexer.run();
                 }
             }
             else {
