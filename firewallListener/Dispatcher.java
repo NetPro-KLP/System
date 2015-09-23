@@ -7,12 +7,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import java.util.Queue;
-import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ThreadPoolDispatcher {
+public class Dispatcher {
 	
-    static final String QUEUENUMTHREADS = "1";
-    static final String DISPATCHNUMTHREADS = "1";
+    static final String QUEUENUMTHREADS = "3";
+    static final String DISPATCHNUMTHREADS = "10";
     static final String THREADPROP = "Threads";
 
     // 패킷디스패치 루프의 슬립 타입을 '초' 단위로 지정
@@ -21,10 +21,10 @@ public class ThreadPoolDispatcher {
     private int queueNumThreads;
     private int dispatchNumThreads;
 
-    private Queue<String> queue = new LinkedList<String>();
-    private int Semaphore = 1;
+    private Queue<QueueListenedInfo> queue = new ConcurrentLinkedQueue<QueueListenedInfo>();
+    //private Queue<QueueListenedInfo> queue = new LinkedList<QueueListenedInfo>();
 
-    public ThreadPoolDispatcher() {
+    public Dispatcher() {
         queueNumThreads = Integer.parseInt(System.getProperty(THREADPROP, QUEUENUMTHREADS));
         dispatchNumThreads = Integer.parseInt(System.getProperty(THREADPROP, DISPATCHNUMTHREADS));
     }
@@ -79,9 +79,9 @@ public class ThreadPoolDispatcher {
                 inputStream.read(payloadBuffer);
                 String payload = new String(payloadBuffer);
 
-                queue.offer(headerSize + "|" + payloadSize + "|" + header + "|" + payload);
+                QueueListenedInfo queueListenedInfo = new QueueListenedInfo(socket, headerSize + "|" + payloadSize + "|" + header + "|" + payload);
+                queue.offer(queueListenedInfo);
 
-                socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -93,10 +93,10 @@ public class ThreadPoolDispatcher {
     	while( true ) {
 
             if (queue.peek() != null) {
-                String packet = queue.poll();
+                QueueListenedInfo receivedInfo = queue.poll();
 
-                if (packet != null) {
-				    Runnable eventDemultiplexer = new EventDemultiplexer(packet);
+                if (receivedInfo != null) {
+				    Runnable eventDemultiplexer = new EventDemultiplexer(receivedInfo);
 	        	    eventDemultiplexer.run();
                 }
             }

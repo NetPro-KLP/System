@@ -15,7 +15,7 @@ public class FirewallListener {
     }
     
     public void startServer() {
-		ThreadPoolDispatcher dispatcher = new ThreadPoolDispatcher();
+		Dispatcher dispatcher = new Dispatcher();
     	dispatcher.dispatch(serverSocket);
     }
 }
