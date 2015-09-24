@@ -7,21 +7,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.LinkedList;
 
 public class Dispatcher {
 	
-    static final String QUEUENUMTHREADS = "3";
-    static final String DISPATCHNUMTHREADS = "10";
+    static final String QUEUENUMTHREADS = "2";
+    static final String DISPATCHNUMTHREADS = "1";
     static final String THREADPROP = "Threads";
 
     // 패킷디스패치 루프의 슬립 타입을 'ms' 단위로 지정
-    private static final int PACKETDISPATCHLOOP_SLEEPTIME = 50;
+    private static final int PACKETDISPATCHLOOP_SLEEPTIME = 30;
     private final int HEADER_SIZE = 4;
     private int queueNumThreads;
     private int dispatchNumThreads;
 
-    private Queue<QueueListenedInfo> queue = new ConcurrentLinkedQueue<QueueListenedInfo>();
+    private Queue<QueueListenedInfo> queue = new LinkedList<QueueListenedInfo>();
 
     public Dispatcher() {
         queueNumThreads = Integer.parseInt(System.getProperty(THREADPROP, QUEUENUMTHREADS));
@@ -95,8 +95,14 @@ public class Dispatcher {
                 QueueListenedInfo receivedInfo = queue.poll();
 
                 if (receivedInfo != null) {
-				    Runnable demultiplexer = new Demultiplexer(receivedInfo);
-	        	    demultiplexer.run();
+                    Thread thread = new Thread() {
+                        public void run() {
+                            Runnable demultiplexer = new Demultiplexer(receivedInfo);
+                            demultiplexer.run();
+                        }
+                    };
+
+                    thread.start();
                 }
             }
             else {
