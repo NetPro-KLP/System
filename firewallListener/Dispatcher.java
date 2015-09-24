@@ -64,9 +64,13 @@ public class Dispatcher {
                 //int headerSize = dataInputStream.readInt();
 
                 //dataInputStream = new DataInputStream(socket.getInputStream());
-                int payloadSize = dataInputStream.readInt();
+                //int payloadSize = dataInputStream.readInt();
 
                 InputStream inputStream = socket.getInputStream();
+
+                byte[] bytePayloadSize = new byte[4];
+                inputStream.read(bytePayloadSize);
+                int payloadSize = byteToInt(bytePayloadSize);
 
                 //byte[] headerBuffer = new byte[headerSize];
                 //inputStream.read(headerBuffer);
@@ -113,5 +117,10 @@ public class Dispatcher {
                 }
             }
         }
+    }
+
+    private int byteToInt (byte[] arr) {
+      return (arr[0] & 0xff) << 24 | (arr[1] & 0xff) << 16 |
+             (arr[2] & 0xff) << 8 | (arr[3] & 0xff);
     }
 }

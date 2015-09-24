@@ -1,4 +1,6 @@
 #!/bin/bash
 (exec rm ../firewallListener/*.class)
 (exec rm ../serverStarter/*.class)
+(exec rm ../webListener/*.class)
+(exec javac -cp "..:../libForVert.x/*:../lib/*" ../webListener/*.java)
 (exec javac -cp ".." ../serverStarter/ServerInitializer.java)

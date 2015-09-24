@@ -37,6 +37,10 @@ public class PacketAnalyzer {
         return header;
     }*/
 
+    public int getPayloadSize() {
+      return payloadSize;
+    }
+
     public String getCode() {
         return code;
     }

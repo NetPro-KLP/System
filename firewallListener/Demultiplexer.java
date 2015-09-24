@@ -19,16 +19,18 @@ public class Demultiplexer implements Runnable {
             PacketAnalyzer packetAnalyzer = new PacketAnalyzer(this.packet);
 
             //String header = packetAnalyzer.getHeader();
+            int payloadSize = packetAnalyzer.getPayloadSize();
             String code = packetAnalyzer.getCode();
             String reqRes = packetAnalyzer.getReqRes();
             String firewall = packetAnalyzer.getFirewall();
             String contents = packetAnalyzer.getContents();
 
             //System.out.println(header);
-            System.out.println(code);
-            System.out.println(reqRes);
-            System.out.println(firewall);
-            System.out.println(contents);
+            System.out.println("payloadSize: " + Integer.toString(payloadSize));
+            System.out.println("code: " + code);
+            System.out.println("req/res: " + reqRes);
+            System.out.println("#firewall: " + firewall);
+            System.out.println("contents: " + contents);
 
             EventHandler eventHandler = new EventHandler();
 
