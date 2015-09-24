@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec ps aux|grep java
