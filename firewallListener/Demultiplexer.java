@@ -18,13 +18,13 @@ public class Demultiplexer implements Runnable {
         try {
             PacketAnalyzer packetAnalyzer = new PacketAnalyzer(this.packet);
 
-            String header = packetAnalyzer.getHeader();
+            //String header = packetAnalyzer.getHeader();
             String code = packetAnalyzer.getCode();
             String reqRes = packetAnalyzer.getReqRes();
             String firewall = packetAnalyzer.getFirewall();
             String contents = packetAnalyzer.getContents();
 
-            System.out.println(header);
+            //System.out.println(header);
             System.out.println(code);
             System.out.println(reqRes);
             System.out.println(firewall);
@@ -32,7 +32,7 @@ public class Demultiplexer implements Runnable {
 
             EventHandler eventHandler = new EventHandler();
 
-            switch(header) {
+            switch(code) {
                 case "NULL":
                     eventHandler.NopeEvent();
                     break;

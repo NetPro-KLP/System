@@ -61,24 +61,24 @@ public class Dispatcher {
                 Socket socket = serverSocket.accept();
 
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-                int headerSize = dataInputStream.readInt();
+                //int headerSize = dataInputStream.readInt();
 
-                dataInputStream = new DataInputStream(socket.getInputStream());
+                //dataInputStream = new DataInputStream(socket.getInputStream());
                 int payloadSize = dataInputStream.readInt();
 
                 InputStream inputStream = socket.getInputStream();
 
-                byte[] headerBuffer = new byte[headerSize];
-                inputStream.read(headerBuffer);
-                String header = new String(headerBuffer);
+                //byte[] headerBuffer = new byte[headerSize];
+                //inputStream.read(headerBuffer);
+                //String header = new String(headerBuffer);
 
-                inputStream = socket.getInputStream();
+                //inputStream = socket.getInputStream();
 
                 byte[] payloadBuffer = new byte[payloadSize];
                 inputStream.read(payloadBuffer);
                 String payload = new String(payloadBuffer);
 
-                QueueListenedInfo queueListenedInfo = new QueueListenedInfo(socket, headerSize + "|" + payloadSize + "|" + header + "|" + payload);
+                QueueListenedInfo queueListenedInfo = new QueueListenedInfo(socket, /*headerSize + "|" +*/ payloadSize + "|"/* + header + "|"*/ + payload);
                 queue.offer(queueListenedInfo);
 
             } catch (IOException e) {

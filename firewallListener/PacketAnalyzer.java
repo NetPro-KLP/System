@@ -5,9 +5,9 @@ import java.util.StringTokenizer;
 public class PacketAnalyzer {
 
     private String packet;
-    private int headerSize;
+    //private int headerSize;
     private int payloadSize;
-    private String header;
+    //private String header;
     private String code;
     private String reqRes;
     private String firewall;
@@ -17,12 +17,12 @@ public class PacketAnalyzer {
         this.packet = packet;
         StringTokenizer token = new StringTokenizer(packet, "|");
 
-        if (token.hasMoreTokens())
-            this.headerSize = Integer.parseInt(token.nextToken());
+        /*if (token.hasMoreTokens())
+            this.headerSize = Integer.parseInt(token.nextToken());*/
         if (token.hasMoreTokens())
             this.payloadSize = Integer.parseInt(token.nextToken());
-        if (token.hasMoreTokens())
-            this.header = token.nextToken();
+        /*if (token.hasMoreTokens())
+            this.header = token.nextToken();*/
         if (token.hasMoreTokens()) {
             String payload = token.nextToken();
 
@@ -32,10 +32,10 @@ public class PacketAnalyzer {
             this.contents = payload.substring(32, payload.length());
         }
     }
-
+/*
     public String getHeader() {
         return header;
-    }
+    }*/
 
     public String getCode() {
         return code;
