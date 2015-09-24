@@ -18,8 +18,8 @@ public class WebListener extends Verticle {
         HttpServer server = vertx.createHttpServer();
         SocketIOServer ioServer = new DefaultSocketIOServer(vertx, server);
 
-        Demultiplexer demultiplexer = new Demultiplexer();
-        demultiplexer.demultiplex(ioServer, server);
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.dispatch(ioServer, server);
 /*
         try {
           Connection con = null;
