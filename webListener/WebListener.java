@@ -12,7 +12,7 @@ public class WebListener extends Verticle {
 
     public void start() {
 
-        int port = 333;
+        int port = 8888;
 
         HttpServer server = vertx.createHttpServer();
         SocketIOServer ioServer = new DefaultSocketIOServer(vertx, server);
