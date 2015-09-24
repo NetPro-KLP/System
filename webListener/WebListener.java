@@ -12,15 +12,14 @@ public class WebListener extends Verticle {
 
     public void start() {
 
-        int port = 20000;
+        int port = 333;
 
         HttpServer server = vertx.createHttpServer();
         SocketIOServer ioServer = new DefaultSocketIOServer(vertx, server);
 
         ioServer.sockets().onConnection(new Handler<SocketIOSocket>() {
             public void handle(final SocketIOSocket socket) {
-                socket.emit("Hello");
-                socket.on("/news", new Handler<JsonObject>() {
+                socket.on("msg", new Handler<JsonObject>() {
                     public void handle(JsonObject data) {
                         System.out.println(data);
                         socket.emit(data);
