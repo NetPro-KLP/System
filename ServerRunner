@@ -1,3 +1,10 @@
 #!/bin/bash
 
-(exec java serverStarter/ServerInitializer) & (exec vertx run webListener/WebListener.java)
+(
+  cd /home/system/System
+  exec java serverStarter/ServerInitializer
+) & (
+  cd /home/system/System
+  source ~/.bash_profile
+  exec vertx run webListener/WebListener.java
+)

@@ -66,10 +66,10 @@ public class Dispatcher {
                 //dataInputStream = new DataInputStream(socket.getInputStream());
                 //int payloadSize = dataInputStream.readInt();
 
-                InputStream inputStream = socket.getInputStream();
+                //InputStream inputStream = socket.getInputStream();
 
                 byte[] bytePayloadSize = new byte[4];
-                inputStream.read(bytePayloadSize);
+                dataInputStream.read(bytePayloadSize, 0, bytePayloadSize.length);
                 int payloadSize = byteToInt(bytePayloadSize);
 
                 //byte[] headerBuffer = new byte[headerSize];
@@ -79,8 +79,9 @@ public class Dispatcher {
                 //inputStream = socket.getInputStream();
 
                 byte[] payloadBuffer = new byte[payloadSize];
-                inputStream.read(payloadBuffer);
+                dataInputStream.read(payloadBuffer, 0, payloadBuffer.length);
                 String payload = new String(payloadBuffer);
+                payload = payload.trim();
 
                 QueueListenedInfo queueListenedInfo = new QueueListenedInfo(socket, /*headerSize + "|" +*/ payloadSize + "|"/* + header + "|"*/ + payload);
                 queue.offer(queueListenedInfo);

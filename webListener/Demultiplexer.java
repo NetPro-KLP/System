@@ -17,6 +17,9 @@ public class Demultiplexer implements Runnable {
     }
 
     public void run() {
+      JsonObject data = new JsonObject();
+      data.putString("hello", "world");
+      socket.emit("news", data);
         socket.on("insert", new Handler<JsonObject>() {
             public void handle(JsonObject data) {
                 System.out.println(data);
@@ -43,6 +46,12 @@ public class Demultiplexer implements Runnable {
                 System.out.println(data);
                 socket.emit(data);
             }
+        });
+
+        socket.on("my other event", new Handler<JsonObject>() {
+          public void handle(JsonObject data) {
+            System.out.println(data);
+          }
         });
     }
     
