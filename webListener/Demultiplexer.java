@@ -33,7 +33,7 @@ public class Demultiplexer implements Runnable {
                 // JsonObject reply = new JsonObject().putString("code","400");
                 // reply.putString("body", "somethings were error");
 
-                socket.emit(data);
+                socket.emit("insert res", reply);
             }
         });
 
@@ -81,7 +81,10 @@ public class Demultiplexer implements Runnable {
 
         socket.on("delete", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
-                String target = jsonToString(json, "data");
+                String table = jsonToString(json, "table");
+                String key = jsonToString(json, "key");
+                String value = jsonToString(json, "value");
+                mysqlHandler.deleteHandler(table, key, value);
 
                 // delete 성공
                 JsonObject reply = new JsonObject().putString("code", "204");

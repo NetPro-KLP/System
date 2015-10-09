@@ -76,8 +76,6 @@ public class MysqlHandler {
       if (this.isConnected) {
         try {
 
-          String query = "";
-
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
@@ -85,10 +83,17 @@ public class MysqlHandler {
       } else {
       }
     }
-
-    public void deleteHandler() {
+*/
+    public void deleteHandler(String table, String key, String value) {
       if (this.isConnected) {
         try {
+          java.sql.Statement st = null;
+          st = this.firewallConn.createStatement();
+
+          String query = "DELETE FROM " + table + " WHERE " + key + " = '"
+            + value + "'";
+
+          st.executeUpdate(query);
 
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
@@ -97,7 +102,7 @@ public class MysqlHandler {
       } else {
       }
     }
-
+/*
     public void updateHandler() {
       if (this.isConnected) {
         try {
