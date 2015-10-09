@@ -10,16 +10,16 @@ public class Demultiplexer implements Runnable {
 
     private SocketIOServer ioServer;
     private SocketIOSocket socket;
+    private MysqlHandler mysqlHandler;
 
     public Demultiplexer(SocketIOServer ioServer, SocketIOSocket socket) {
         this.ioServer = ioServer;
         this.socket = socket;
+        this.mysqlHandler = new MysqlHandler("localhost", "root", "klpsoma123");
     }
 
     public void run() {
-      JsonObject data = new JsonObject();
-      data.putString("hello", "world");
-      socket.emit("news", data);
+
         socket.on("insert", new Handler<JsonObject>() {
             public void handle(JsonObject data) {
                 System.out.println(data);
@@ -51,6 +51,7 @@ public class Demultiplexer implements Runnable {
         socket.on("my other event", new Handler<JsonObject>() {
           public void handle(JsonObject data) {
             System.out.println(data);
+            socket.emit("news", "data");
           }
         });
     }
