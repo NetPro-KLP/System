@@ -48,12 +48,20 @@ public class Demultiplexer implements Runnable {
             }
         });
 
+        socket.on("heartbeat", new Handler<JsonObject>() {
+            public void handle(JsonObject data) {
+            }
+        });
+
         socket.on("my other event", new Handler<JsonObject>() {
           public void handle(JsonObject data) {
-            System.out.println(data);
+            System.out.println(jsonToString(data, "msg"));
             socket.emit("news", "data");
           }
         });
     }
     
+    private String jsonToString (JsonObject json, String element) {
+      return json.getString(element);
+    }
 }
