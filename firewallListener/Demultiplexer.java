@@ -29,14 +29,18 @@ public class Demultiplexer implements Runnable {
             System.out.println("payloadSize: " + Integer.toString(payloadSize));
             System.out.println("code: " + code);
             System.out.println("req/res: " + reqRes);
-            System.out.println("#firewall: " + firewall);
+            System.out.println("firewall: " + firewall);
             System.out.println("contents: " + contents);
 
-            EventHandler eventHandler = new EventHandler();
+            EventHandler eventHandler = new EventHandler("localhost",
+                "root", "klpsoma123");
 
             switch(code) {
                 case "NULL":
-                    eventHandler.NopeEvent();
+                    eventHandler.nopeEvent();
+                    break;
+                case "pack":
+                    eventHandler.packetEvent();
                     break;
                 default:
                     break;

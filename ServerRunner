@@ -2,7 +2,7 @@
 
 (
   cd /home/system/System
-  exec java serverStarter/ServerInitializer
+  exec java -cp ".:libForVert.x/*" serverStarter/ServerInitializer
 ) & (
   cd /home/system/System
   source ~/.bash_profile
