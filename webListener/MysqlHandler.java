@@ -84,13 +84,13 @@ public class MysqlHandler {
       }
     }
 
-    public boolean insertLogHandler(String idx, String admin_idx,
+    public boolean insertLogHandler(String admin_idx,
         String action, String date) {
       if (this.isConnected) {
         try {
           java.sql.Statement st = getSt();
 
-          String query = "INSERT INTO log VALUES(" + idx + "," + admin_idx
+          String query = "INSERT INTO `log`(`admin_idx`,`action`,`date`) VALUES(" + admin_idx
             + ", '" + action + "', '" + date + "')";
 
           st.executeUpdate(query);

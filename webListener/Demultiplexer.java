@@ -104,13 +104,12 @@ public class Demultiplexer implements Runnable {
 
         socket.on("insert log", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
-                String idx = jsonToString(json, "idx");
                 String admin_idx = jsonToString(json, "admin_idx");
                 String action = jsonToString(json, "action");
                 String date = jsonToString(json, "date");
                 date.trim();
 
-                boolean res = mysqlHandler.insertLogHandler(idx, admin_idx, action, date);
+                boolean res = mysqlHandler.insertLogHandler(admin_idx, action, date);
 
                 JsonObject reply;
 
