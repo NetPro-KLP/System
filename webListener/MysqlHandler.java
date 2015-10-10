@@ -84,7 +84,7 @@ public class MysqlHandler {
       }
     }
 
-    public void insertLogHandler(String idx, String admin_idx,
+    public boolean insertLogHandler(String idx, String admin_idx,
         String action, String date) {
       if (this.isConnected) {
         try {
@@ -95,11 +95,15 @@ public class MysqlHandler {
 
           st.executeUpdate(query);
 
+          return true;
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
+
+          return false;
         }
       } else {
+        return false;
       }
     }
 /*

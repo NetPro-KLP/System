@@ -110,15 +110,18 @@ public class Demultiplexer implements Runnable {
                 String date = jsonToString(json, "date");
                 date.trim();
 
-                mysqlHandler.insertLogHandler(idx, admin_idx, action, date);
+                boolean res = mysqlHandler.insertLogHandler(idx, admin_idx, action, date);
+
+                JsonObject reply;
 
                 // insert 성공(201)
-                JsonObject reply = new JsonObject().putString("code", "201");
-
-                // 에러날 경우
-                // 400
-                // JsonObject reply = new JsonObject().putString("code","400");
-                // reply.putString("body", "somethings were error");
+                if (res)
+                  reply = new JsonObject().putString("code", "201");
+                // 에러날 경우(400)
+                else {
+                  reply = new JsonObject().putString("code","400");
+                  reply.putString("body", "somethings were error");
+                }
 
                 socket.emit("insert log res", reply);
             }
