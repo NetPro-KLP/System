@@ -33,13 +33,25 @@ public class MysqlHandler {
 
     }
 
+    public java.sql.Statement getSt() {
+      java.sql.Statement st = null;
+
+      try {
+          st = this.firewallConn.createStatement();
+      } catch (SQLException sqex) {
+          System.out.println("SQLException: " + sqex.getMessage());
+          System.out.println("SQLState: " + sqex.getSQLState());
+      }
+
+      return st;
+    }
+
     public void show() {
       if (this.isConnected) {
         try {
 
-          java.sql.Statement st = null;
+          java.sql.Statement st = getSt();
           ResultSet rs = null;
-          st = this.firewallConn.createStatement();
           /*
           rs = st.executeQuery("SHOW DATABASES");
 
@@ -71,6 +83,25 @@ public class MysqlHandler {
       } else {
       }
     }
+
+    public void insertLogHandler(String idx, String admin_idx,
+        String action, String date) {
+      if (this.isConnected) {
+        try {
+          java.sql.Statement st = getSt();
+
+          String query = "INSERT INTO log VALUES(" + idx + "," + admin_idx
+            + ", '" + action + "', '" + date + "')";
+
+          st.executeUpdate(query);
+
+        } catch (SQLException sqex) {
+          System.out.println("SQLException: " + sqex.getMessage());
+          System.out.println("SQLState: " + sqex.getSQLState());
+        }
+      } else {
+      }
+    }
 /*
     public void insertHandler() {
       if (this.isConnected) {
@@ -87,8 +118,7 @@ public class MysqlHandler {
     public void deleteHandler(String table, String key, String value) {
       if (this.isConnected) {
         try {
-          java.sql.Statement st = null;
-          st = this.firewallConn.createStatement();
+          java.sql.Statement st = getSt();
 
           String query = "DELETE FROM " + table + " WHERE " + key + " = '"
             + value + "'";
