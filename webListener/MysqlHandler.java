@@ -2,6 +2,8 @@ package webListener;
 
 import com.nhncorp.mods.socket.io.SocketIOSocket;
 
+import java.lang.Math;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -61,7 +63,7 @@ public class MysqlHandler {
 
       if (this.isConnected) {
         if (code != null) {
-          reply = new JsonObject().putString("code", code);
+          reply = new JsonObject().putNumber("code", Integer.parseInt(code));
           if (body != null) {
             reply.putString("body", body);
           }
@@ -87,28 +89,89 @@ public class MysqlHandler {
             /*
             // inboud, outbound packet 정보를 모두 불러오는 쿼리 : A
 
-            String outboundQuery = "SELECT u.ip, p.source_ip, p.source_port,"
+            String outboundPacketQuery = "SELECT u.ip, p.source_ip, p.source_port,"
               + "p.destination_ip, p.destination_port, p.protocol, p.tcpudp,"
               + "p.packet_count, p.totalbytes, p.starttime, p.endtime, p.danger,"
-              + "p.warn FROM packets p INNER JOIN users u ON u.ip = p.source_ip";
-            String inboundQuery = "SELECT u.ip, p.source_ip, p.source_port,"
+              + "p.warn FROM packets p JOIN users u ON u.ip = p.source_ip";
+            String inboundPacketQuery = "SELECT u.ip, p.source_ip, p.source_port,"
               + "p.destination_ip, p.destination_port, p.protocol, p.tcpudp,"
               + "p.packet_count, p.totalbytes, p.starttime, p.endtime, p.danger,"
-              + "p.warn FROM packets p INNER JOIN users u ON u.ip = p.destination_ip";
+              + "p.warn FROM packets p JOIN users u ON u.ip = p.destination_ip";
             */
+            String trafficQuery = "SELECT u.ip, u.connectedAt, u.status, p.starttime, p.endtime"
+              + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
+              + " FROM users u JOIN packets p ON u.ip = p.source_ip"
+              + " OR u.ip = p.destination_ip GROUP BY u.ip, p.starttime, p.endtime"
+              + " ORDER BY u.ip, p.starttime, p.endtime DESC";
+
+            double maxTraffic = Math.pow(2, 30);
 
             try {
               while(isRealtime) {
 
                 JsonObject reply = new JsonObject();
+                JsonArray trafficArray = new JsonArray();
+                ResultSet rs = null;
+
+                rs = st.executeQuery(trafficQuery);
+
+                if(st.execute(trafficQuery))
+                  rs = st.getResultSet();
+
+                int cnt = 0;
+                String preIp = null;
+
+                while(rs.next()) {
+                  JsonObject trafficObject = null;
+
+                  String ip = rs.getString(1);
+                  String connectedAt = rs.getString(2);
+                  int status = rs.getInt(3);
+                  String starttime = rs.getString(4);
+                  String endtime = rs.getString(5);
+                  int traffic = rs.getInt(6);
+                  int danger = rs.getInt(7);
+                  int warn = rs.getInt(8);
+
+                  if (preIp == null) {
+                    preIp = ip;
+                    reply.putNumber("code", 200);
+                  }
+
+                  if (preIp != ip) {
+                    cnt = 1;
+                    reply.putArray(preIp, trafficArray);
+                    trafficArray = null;
+                    preIp = ip;
+                  }
+                  else
+                    cnt++;
+
+                  if (cnt <= 20) {
+                    trafficObject = new JsonObject().putString("ip", ip);
+                    trafficObject.putString("connectedAt", connectedAt);
+                    trafficObject.putNumber("status", status);
+                    trafficObject.putString("starttime", starttime);
+                    trafficObject.putString("endtime", endtime);
+                    trafficObject.putNumber("traffic", traffic);
+                    trafficObject.putNumber("danger", danger);
+                    trafficObject.putNumber("warn", warn);
+                    trafficObject.putNumber("trafficPercentage",
+                        ((double)traffic / maxTraffic) * 100);
+                    trafficArray.addObject(trafficObject);
+                  }
+                }
+
+                reply.putArray(preIp, trafficArray);
+
                 /*  A 내용
                 ResultSet rs = null;
-                JsonArray inboundArray = new JsonArray();
-                JsonArray outboundArray = new JsonArray();
+                JsonArray inboundPacketArray = new JsonArray();
+                JsonArray outboundPacketArray = new JsonArray();
 
-                rs = st.executeQuery(inboundQuery);
+                rs = st.executeQuery(inboundPacketQuery);
 
-                if(st.execute(inboundQuery))
+                if(st.execute(inboundPacketQuery))
                   rs = st.getResultSet();
 
                 while(rs.next()) {
@@ -128,8 +191,7 @@ public class MysqlHandler {
                   int danger = rs.getInt(12);
                   int warn = rs.getInt(13);
 
-                  inboundObject = new JsonObject().putString("code", "200");
-                  inboundObject.putString("ip", ip);
+                  inboundObject = new JsonObject().putString("ip", ip);
                   inboundObject.putString("source_ip", source_ip);
                   inboundObject.putString("source_port", source_port);
                   inboundObject.putString("destination_ip", destination_ip);
@@ -143,13 +205,13 @@ public class MysqlHandler {
                   inboundObject.putNumber("danger", danger);
                   inboundObject.putNumber("warn", warn);
 
-                  inboundArray.addObject(inboundObject);
+                  inboundPacketArray.addObject(inboundObject);
                 }
 
                 rs = null;
-                rs = st.executeQuery(outboundQuery);
+                rs = st.executeQuery(outboundPacketQuery);
 
-                if(st.execute(outboundQuery))
+                if(st.execute(outboundPacketQuery))
                   rs = st.getResultSet();
 
                 while(rs.next()) {
@@ -169,8 +231,7 @@ public class MysqlHandler {
                   int danger = rs.getInt(12);
                   int warn = rs.getInt(13);
 
-                  outboundObject = new JsonObject().putString("code", "200");
-                  outboundObject.putString("ip", ip);
+                  outboundObject = new JsonObject().putString("ip", ip);
                   outboundObject.putString("source_ip", source_ip);
                   outboundObject.putString("source_port", source_port);
                   outboundObject.putString("destination_ip", destination_ip);
@@ -184,11 +245,13 @@ public class MysqlHandler {
                   outboundObject.putNumber("danger", danger);
                   outboundObject.putNumber("warn", warn);
 
-                  outboundArray.addObject(outboundObject);
+                  outboundPacketArray.addObject(outboundObject);
                 }
 
-                reply.putArray("inbound", inboundArray);
-                reply.putArray("outbound", outboundArray);
+                reply.putNumber("code", 200);
+                reply.putArray("inboundPacket", inboundPacketArray);
+                reply.putArray("outboundPacket", outboundPacketArray);
+                // A 내용
                 */
 
                 socket.emit(emitTo, reply);
