@@ -21,6 +21,20 @@ public class Demultiplexer implements Runnable {
 
     public void run() {
 
+        socket.on("realtimeOn", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+                String emitTo = "realtimeOn res";
+                mysqlHandler.realtimeOn(emitTo);
+            }
+        });
+
+        socket.on("realtimeClose", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+                String emitTo = "realtimeClose res";
+                mysqlHandler.realtimeClose(emitTo);
+            }
+        });
+
         socket.on("insert", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
                 String target = jsonToString(json, "data");
@@ -86,7 +100,8 @@ public class Demultiplexer implements Runnable {
                 String key = jsonToString(json, "key");
                 String value = jsonToString(json, "value");
 
-                mysqlHandler.deleteHandler(table, key, value);
+                String emitTo = "delete res";
+                mysqlHandler.deleteHandler(emitTo, table, key, value);
             }
         });
 
@@ -97,7 +112,8 @@ public class Demultiplexer implements Runnable {
                 String date = jsonToString(json, "date");
                 date.trim();
 
-                mysqlHandler.insertLogHandler(admin_idx, action, date);
+                String emitTo = "insert log res";
+                mysqlHandler.insertLogHandler(emitTo, admin_idx, action, date);
             }
         });
 
