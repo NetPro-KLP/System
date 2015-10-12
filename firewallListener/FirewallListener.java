@@ -8,14 +8,14 @@ public class FirewallListener {
     
     public FirewallListener(int port) {
         try {
-			serverSocket = new ServerSocket(port);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+            serverSocket = new ServerSocket(port);
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
     }
     
     public void startServer() {
-		Dispatcher dispatcher = new Dispatcher();
+	Dispatcher dispatcher = new Dispatcher();
     	dispatcher.dispatch(serverSocket);
     }
 }
