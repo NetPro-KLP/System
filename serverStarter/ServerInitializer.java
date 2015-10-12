@@ -19,17 +19,5 @@ public class ServerInitializer {
 
         FirewallListener firewallListener = new FirewallListener(firewallPort);
         firewallListener.startServer();
-        /*
-        Thread firewallListenerThread = new Thread() {
-            public void run() {
-                FirewallListener firewallListener = new FirewallListener(firewallPort);
-                firewallListener.startServer();
-            }
-        };
-        firewallListenerThread.start();
-
-        WebListener webListener = new WebListener();
-        webListener.startServer();
-        */
     }
 }
