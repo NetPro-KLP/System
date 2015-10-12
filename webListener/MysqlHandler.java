@@ -1,21 +1,28 @@
 package webListener;
 
+import com.nhncorp.mods.socket.io.SocketIOSocket;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.vertx.java.core.json.JsonObject;
+
 public class MysqlHandler {
 
+  private SocketIOSocket socket;
   private Connection firewallConn = null;
   private boolean isConnected;
 
-    public MysqlHandler(String host, String userId, String pw) {
+    public MysqlHandler(String host, String userId, String pw,
+        SocketIOSocket socket) {
 
       this.isConnected = false;
       
       while (!this.isConnected) {
         try {
+            this.socket = socket;
             this.firewallConn =
               DriverManager.getConnection("jdbc:mysql://" + host +
                   "/KLP-Firewall", userId, pw);
@@ -33,7 +40,7 @@ public class MysqlHandler {
 
     }
 
-    public java.sql.Statement getSt() {
+    private java.sql.Statement getSt() {
       java.sql.Statement st = null;
 
       try {
@@ -46,46 +53,29 @@ public class MysqlHandler {
       return st;
     }
 
-    public void show() {
+    private void resToWeb(String emitTo, String code, String body) {
+      JsonObject reply = null;
+
       if (this.isConnected) {
-        try {
-
-          java.sql.Statement st = getSt();
-          ResultSet rs = null;
-          /*
-          rs = st.executeQuery("SHOW DATABASES");
-
-          if (st.execute("SHOW DATABASES")) {
-            rs = st.getResultSet();
+        if (code != null) {
+          reply = new JsonObject().putString("code", code);
+          if (body != null) {
+            reply.putString("body", body);
           }
-
-          while (rs.next()) {
-            String str = rs.getNString(1);
-            System.out.println(str);
-          }
-*/
-          rs = st.executeQuery("SELECT data FROM rules_data WHERE 1");
-
-          if (st.execute("SELECT data FROM rules_data WHERE 1")) {
-            rs = st.getResultSet();
-          }
-
-          while(rs.next()) {
-            String str = rs.getNString(1);
-            //System.out.println(str);
-          }
-
-          firewallConn.close();
-        } catch (SQLException sqex) {
-          System.out.println("SQLException: " + sqex.getMessage());
-          System.out.println("SQLState: " + sqex.getSQLState());
         }
       } else {
+        reply = new JsonObject().putString("code", "400");
+        reply.putString("body", "Database connection failed");
       }
+
+      this.socket.emit(emitTo, reply);
     }
 
-    public boolean insertLogHandler(String admin_idx,
+    public void insertLogHandler(String admin_idx,
         String action, String date) {
+
+      String emitTo = "insert log res";
+
       if (this.isConnected) {
         try {
           java.sql.Statement st = getSt();
@@ -95,15 +85,17 @@ public class MysqlHandler {
 
           st.executeUpdate(query);
 
-          return true;
+          // insert 성공(201)
+          resToWeb(emitTo, "201", null);
+
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
-
-          return false;
+          resToWeb(emitTo, "400", "insert log: somethings were error");
         }
       } else {
-        return false;
+        // 에러날 경우
+        resToWeb(emitTo, "400", "Database connection failed");
       }
     }
 /*
@@ -120,6 +112,9 @@ public class MysqlHandler {
     }
 */
     public void deleteHandler(String table, String key, String value) {
+
+      String emitTo = "delete res";
+
       if (this.isConnected) {
         try {
           java.sql.Statement st = getSt();
@@ -129,11 +124,14 @@ public class MysqlHandler {
 
           st.executeUpdate(query);
 
+          resToWeb(emitTo, "204", null);
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
+          resToWeb(emitTo, "400", "delete: somethings were error");
         }
       } else {
+        resToWeb(emitTo, "400", "Database connection failed");
       }
     }
 /*

@@ -15,7 +15,8 @@ public class Demultiplexer implements Runnable {
     public Demultiplexer(SocketIOServer ioServer, SocketIOSocket socket) {
         this.ioServer = ioServer;
         this.socket = socket;
-        this.mysqlHandler = new MysqlHandler("localhost", "root", "klpsoma123");
+        this.mysqlHandler = new MysqlHandler("localhost", "root",
+            "klpsoma123", socket);
     }
 
     public void run() {
@@ -84,21 +85,8 @@ public class Demultiplexer implements Runnable {
                 String table = jsonToString(json, "table");
                 String key = jsonToString(json, "key");
                 String value = jsonToString(json, "value");
+
                 mysqlHandler.deleteHandler(table, key, value);
-
-                // delete 성공
-                JsonObject reply = new JsonObject().putString("code", "204");
-
-                // 에러날 경우
-                // 404: 리소스가 존재하지 않을 경우
-                // JsonObject reply = new JsonObject().putString("code","404");
-                // reply.putString("body", "your data was this");
-
-                // 400: 그 외의 에러는 에러 이유를 "body"에 삽입
-                // JsonObject reply = new JsonObject().putString("code","400");
-                // reply.putString("body", "somethings were error");
-
-                socket.emit("delete res", reply);
             }
         });
 
@@ -109,20 +97,7 @@ public class Demultiplexer implements Runnable {
                 String date = jsonToString(json, "date");
                 date.trim();
 
-                boolean res = mysqlHandler.insertLogHandler(admin_idx, action, date);
-
-                JsonObject reply;
-
-                // insert 성공(201)
-                if (res)
-                  reply = new JsonObject().putString("code", "201");
-                // 에러날 경우(400)
-                else {
-                  reply = new JsonObject().putString("code","400");
-                  reply.putString("body", "somethings were error");
-                }
-
-                socket.emit("insert log res", reply);
+                mysqlHandler.insertLogHandler(admin_idx, action, date);
             }
         });
 
