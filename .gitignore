@@ -4,3 +4,5 @@
 *.jar
 *.gz
 *.tar
+*.swo
+*.swn
