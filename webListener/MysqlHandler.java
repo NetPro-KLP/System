@@ -88,7 +88,6 @@ public class MysqlHandler {
 
             /*
             // inboud, outbound packet 정보를 모두 불러오는 쿼리 : A
-
             String outboundPacketQuery = "SELECT u.ip, p.source_ip, p.source_port,"
               + "p.destination_ip, p.destination_port, p.protocol, p.tcpudp,"
               + "p.packet_count, p.totalbytes, p.starttime, p.endtime, p.danger,"
@@ -98,11 +97,11 @@ public class MysqlHandler {
               + "p.packet_count, p.totalbytes, p.starttime, p.endtime, p.danger,"
               + "p.warn FROM packets p JOIN users u ON u.ip = p.destination_ip";
             */
-            String trafficQuery = "SELECT u.ip, u.connectedAt, u.status, p.starttime, p.endtime"
+            String trafficQuery = "SELECT u.idx, u.ip, u.connectedAt, u.status, p.starttime, p.endtime"
               + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
               + " FROM users u JOIN packets p ON u.ip = p.source_ip"
-              + " OR u.ip = p.destination_ip GROUP BY u.ip, p.starttime, p.endtime"
-              + " ORDER BY u.ip, p.starttime, p.endtime DESC";
+              + " OR u.ip = p.destination_ip GROUP BY u.idx, p.starttime, p.endtime"
+              + " ORDER BY u.idx, p.starttime, p.endtime DESC";
 
             double maxTraffic = Math.pow(2, 30);
 
@@ -119,35 +118,40 @@ public class MysqlHandler {
                   rs = st.getResultSet();
 
                 int cnt = 0;
-                String preIp = null;
+                int percentage = 0;
+                int preIdx = -1;
 
                 while(rs.next()) {
                   JsonObject trafficObject = null;
 
-                  String ip = rs.getString(1);
-                  String connectedAt = rs.getString(2);
-                  int status = rs.getInt(3);
-                  String starttime = rs.getString(4);
-                  String endtime = rs.getString(5);
-                  int traffic = rs.getInt(6);
-                  int danger = rs.getInt(7);
-                  int warn = rs.getInt(8);
+                  int idx = rs.getInt(1);
+                  String ip = rs.getString(2);
+                  String connectedAt = rs.getString(3);
+                  int status = rs.getInt(4);
+                  String starttime = rs.getString(5);
+                  String endtime = rs.getString(6);
+                  int traffic = rs.getInt(7);
+                  int danger = rs.getInt(8);
+                  int warn = rs.getInt(9);
 
-                  if (preIp == null) {
-                    preIp = ip;
+                  connectedAt = connectedAt.substring(0,19);
+
+                  if (preIdx == -1) {
+                    preIdx = idx;
                     reply.putNumber("code", 200);
                   }
 
-                  if (preIp != ip) {
+                  if (preIdx != idx) {
                     cnt = 1;
-                    reply.putArray(preIp, trafficArray);
-                    trafficArray = null;
-                    preIp = ip;
+                    reply.putArray(Integer.toString(preIdx), trafficArray);
+                    trafficArray = new JsonArray();
+                    preIdx = idx;
                   }
                   else
                     cnt++;
 
                   if (cnt <= 20) {
+                    percentage = (int)(((double)traffic / maxTraffic) * 100);
                     trafficObject = new JsonObject().putString("ip", ip);
                     trafficObject.putString("connectedAt", connectedAt);
                     trafficObject.putNumber("status", status);
@@ -156,27 +160,22 @@ public class MysqlHandler {
                     trafficObject.putNumber("traffic", traffic);
                     trafficObject.putNumber("danger", danger);
                     trafficObject.putNumber("warn", warn);
-                    trafficObject.putNumber("trafficPercentage",
-                        ((double)traffic / maxTraffic) * 100);
+                    trafficObject.putNumber("trafficPercentage", percentage);
                     trafficArray.addObject(trafficObject);
                   }
                 }
 
-                reply.putArray(preIp, trafficArray);
+                reply.putArray(Integer.toString(preIdx), trafficArray);
 
                 /*  A 내용
                 ResultSet rs = null;
                 JsonArray inboundPacketArray = new JsonArray();
                 JsonArray outboundPacketArray = new JsonArray();
-
                 rs = st.executeQuery(inboundPacketQuery);
-
                 if(st.execute(inboundPacketQuery))
                   rs = st.getResultSet();
-
                 while(rs.next()) {
                   JsonObject inboundObject = null;
-
                   String ip = rs.getString(1);
                   String source_ip = rs.getString(2);
                   String source_port = rs.getString(3);
@@ -190,7 +189,6 @@ public class MysqlHandler {
                   String endtime = rs.getString(11);
                   int danger = rs.getInt(12);
                   int warn = rs.getInt(13);
-
                   inboundObject = new JsonObject().putString("ip", ip);
                   inboundObject.putString("source_ip", source_ip);
                   inboundObject.putString("source_port", source_port);
@@ -204,19 +202,14 @@ public class MysqlHandler {
                   inboundObject.putString("endtime", endtime);
                   inboundObject.putNumber("danger", danger);
                   inboundObject.putNumber("warn", warn);
-
                   inboundPacketArray.addObject(inboundObject);
                 }
-
                 rs = null;
                 rs = st.executeQuery(outboundPacketQuery);
-
                 if(st.execute(outboundPacketQuery))
                   rs = st.getResultSet();
-
                 while(rs.next()) {
                   JsonObject outboundObject = null;
-
                   String ip = rs.getString(1);
                   String source_ip = rs.getString(2);
                   String source_port = rs.getString(3);
@@ -230,7 +223,6 @@ public class MysqlHandler {
                   String endtime = rs.getString(11);
                   int danger = rs.getInt(12);
                   int warn = rs.getInt(13);
-
                   outboundObject = new JsonObject().putString("ip", ip);
                   outboundObject.putString("source_ip", source_ip);
                   outboundObject.putString("source_port", source_port);
@@ -244,10 +236,8 @@ public class MysqlHandler {
                   outboundObject.putString("endtime", endtime);
                   outboundObject.putNumber("danger", danger);
                   outboundObject.putNumber("warn", warn);
-
                   outboundPacketArray.addObject(outboundObject);
                 }
-
                 reply.putNumber("code", 200);
                 reply.putArray("inboundPacket", inboundPacketArray);
                 reply.putArray("outboundPacket", outboundPacketArray);
@@ -315,7 +305,6 @@ public class MysqlHandler {
     public void insertHandler() {
       if (this.isConnected) {
         try {
-
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
@@ -349,7 +338,6 @@ public class MysqlHandler {
     public void updateHandler() {
       if (this.isConnected) {
         try {
-
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
@@ -357,11 +345,9 @@ public class MysqlHandler {
       } else {
       }
     }
-
     public void readHandler() {
       if (this.isConnected) {
         try {
-
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
@@ -371,3 +357,4 @@ public class MysqlHandler {
     }
 */
 }
+

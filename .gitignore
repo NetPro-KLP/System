@@ -1,3 +1,4 @@
+*.swl
 .DS_Store
 *.class
 *.swp
@@ -6,3 +7,4 @@
 *.tar
 *.swo
 *.swn
+*.swm
