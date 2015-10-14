@@ -152,6 +152,9 @@ public class MysqlHandler {
 
                   if (cnt <= 20) {
                     percentage = (int)(((double)traffic / maxTraffic) * 100);
+                    if (percentage > 100)
+                      percentage = 100;
+
                     trafficObject = new JsonObject().putString("ip", ip);
                     trafficObject.putString("connectedAt", connectedAt);
                     trafficObject.putNumber("status", status);
