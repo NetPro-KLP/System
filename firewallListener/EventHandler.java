@@ -38,7 +38,34 @@ public class EventHandler {
         System.out.println("Nope");
     }
 
-    public void packetEvent() {
+    public void initEvent() {
+      if (this.isConnected) {
+        try {
+          java.sql.Statement st = null;
+          st = this.firewallConn.createStatement();
+          ResultSet rs = null;
+
+          String query = "SELECT data FROM rules_data WHERE 1";
+
+          rs = st.executeQuery(query);
+
+          if(st.execute(query))
+            rs = st.getResultSet();
+
+          while(rs.next()) {
+            String data = rs.getString(1);
+            System.out.println(data);
+          }
+        } catch (SQLException sqex) {
+          System.out.println("SQLExeption: " + sqex.getMessage());
+          System.out.println("SQLState: " + sqex.getSQLState());
+        }
+
+      } else {
+      }
+    }
+
+    public void expiredEvent() {
       if (this.isConnected) {
         try {
           java.sql.Statement st = null;

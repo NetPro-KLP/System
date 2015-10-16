@@ -40,8 +40,10 @@ public class Demultiplexer implements Runnable {
                     eventHandler.nopeEvent();
                     break;
                 case "pack":
-                    eventHandler.packetEvent();
+                    eventHandler.expiredEvent();
                     break;
+                case "init":
+                    eventHandler.initEvent();
                 default:
                     break;
             }
