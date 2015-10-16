@@ -126,7 +126,14 @@ public class Demultiplexer implements Runnable {
 
         socket.on("info", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
-              String table = jsonToString(json, "table");
+              String admin_idx = jsonToString(json, "admin_idx");
+              String action = jsonToString(json, "action");
+              String contents = jsonToString(json, "contents");
+              String date = jsonToString(json, "date");
+
+              String emitTo = "info res";
+              mysqlHandler.notifyToFirewall(emitTo, admin_idx, action,
+                  contents, date);
             }
         });
     }

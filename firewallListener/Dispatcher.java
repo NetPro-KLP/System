@@ -68,9 +68,13 @@ public class Dispatcher {
 
                 //InputStream inputStream = socket.getInputStream();
 
-                byte[] bytePayloadSize = new byte[4];
-                dataInputStream.read(bytePayloadSize, 0, bytePayloadSize.length);
-                int payloadSize = byteToInt(bytePayloadSize);
+                byte[] firewallIpByte = new byte[4];
+                dataInputStream.read(firewallIpByte, 0, firewallIpByte.length);
+                String firewallIp = addrToString(firewallIpByte);
+
+                byte[] rowNumByte = new byte[4];
+                dataInputStream.read(rowNumByte, 0, rowNumByte.length);
+                int rowNum = byteToInt(rowNumByte);
 
                 //byte[] headerBuffer = new byte[headerSize];
                 //inputStream.read(headerBuffer);
@@ -78,13 +82,62 @@ public class Dispatcher {
 
                 //inputStream = socket.getInputStream();
 
-                byte[] payloadBuffer = new byte[payloadSize];
-                dataInputStream.read(payloadBuffer, 0, payloadBuffer.length);
-                String payload = new String(payloadBuffer);
-                payload = payload.trim();
+                byte[] codeBuffer = new byte[4];
+                dataInputStream.read(codeBuffer, 0, codeBuffer.length);
+                String code = new String(codeBuffer);
 
-                QueueListenedInfo queueListenedInfo = new QueueListenedInfo(socket, /*headerSize + "|" +*/ payloadSize + "|"/* + header + "|"*/ + payload);
-                queue.offer(queueListenedInfo);
+                if (code.equals("ini")) {
+                  QueueListenedInfo queueListenedInfo = new QueueListenedInfo(
+                      socket, firewallIp, code);
+                  queue.offer(queueListenedInfo);
+                } else {
+                  byte[] saddrByte = new byte[4];
+                  dataInputStream.read(saddrByte, 0, saddrByte.length);
+                  String saddr = addrToString(saddrByte);
+
+                  byte[] srcByte = new byte[2];
+                  dataInputStream.read(srcByte, 0, srcByte.length);
+                  String src = portToString(srcByte);
+
+                  byte[] daddrByte = new byte[4];
+                  dataInputStream.read(daddrByte, 0, daddrByte.length);
+                  String daddr = addrToString(daddrByte);
+
+                  byte[] dstByte = new byte[2];
+                  dataInputStream.read(dstByte, 0, dstByte.length);
+                  String dst = portToString(dstByte);
+
+                  byte[] protocolByte = new byte[2];
+                  dataInputStream.read(protocolByte, 0, protocolByte.length);
+                  String protocol = portToString(protocolByte);
+
+                  byte[] tcpudpByte = new byte[1];
+                  dataInputStream.read(tcpudpByte, 0, tcpudpByte.length);
+                  int tcpudp = tcpudpByte[0] & 0xff;
+
+                  byte[] warnByte = new byte[4];
+                  dataInputStream.read(warnByte, 0, warnByte.length);
+                  int warn = byteToInt(warnByte);
+
+                  byte[] dangerByte = new byte[4];
+                  dataInputStream.read(dangerByte, 0, dangerByte.length);
+                  int danger = byteToInt(dangerByte);
+
+                  byte[] packetCountByte = new byte[4];
+                  dataInputStream.read(packetCountByte, 0, packetCountByte.length);
+                  int packetCount = byteToInt(packetCountByte);
+
+                  byte[] totalbytesByte = new byte[4];
+                  dataInputStream.read(totalbytesByte, 0,
+                      totalbytesByte.length);
+                  int totalbytes = byteToInt(totalbytesByte);
+
+                  QueueListenedInfo queueListenedInfo = new QueueListenedInfo (
+                      socket, firewallIp, code, rowNum + "|" + saddr + "|" + src + "|" + daddr
+                      + "|" + dst + "|" + protocol + "|" + tcpudp + "|" + warn
+                      + "|" + danger + "|" + packetCount + "|" + totalbytes);
+                  queue.offer(queueListenedInfo);
+                }
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -123,5 +176,21 @@ public class Dispatcher {
     private int byteToInt (byte[] arr) {
       return (arr[0] & 0xff) << 24 | (arr[1] & 0xff) << 16 |
              (arr[2] & 0xff) << 8 | (arr[3] & 0xff);
+    }
+
+    private String addrToString (byte[] arr) {
+      int addrInt1 = arr[0] & 0xff;
+      int addrInt2 = arr[1] & 0xff;
+      int addrInt3 = arr[2] & 0xff;
+      int addrInt4 = arr[3] & 0xff;
+
+      return Integer.toString(addrInt1) + "." + Integer.toString(addrInt2) +
+        "." + Integer.toString(addrInt3) + "." + Integer.toString(addrInt4);
+    }
+
+    private String portToString (byte[] arr) {
+      int port = (arr[1] & 0xff) << 8 | (arr[0] & 0xff);
+
+      return Integer.toString(port);
     }
 }

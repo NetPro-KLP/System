@@ -4,56 +4,87 @@ import java.util.StringTokenizer;
 
 public class PacketAnalyzer {
 
-    private String packet;
-    //private int headerSize;
-    private int payloadSize;
-    //private String header;
-    private String code;
-    private String reqRes;
-    private String firewall;
-    private String contents;
+    private int rowNum;
+    private String saddr;
+    private String src;
+    private String daddr;
+    private String dst;
+    private String protocol;
+
+    private String tcpudp;
+    private String warn;
+    private String danger;
+    private String packetCount;
+    private String totalbytes;
 
     public PacketAnalyzer (String packet) {
-        this.packet = packet;
         StringTokenizer token = new StringTokenizer(packet, "|");
 
-        /*if (token.hasMoreTokens())
-            this.headerSize = Integer.parseInt(token.nextToken());*/
         if (token.hasMoreTokens())
-            this.payloadSize = Integer.parseInt(token.nextToken());
-        /*if (token.hasMoreTokens())
-            this.header = token.nextToken();*/
-        if (token.hasMoreTokens()) {
-            String payload = token.nextToken();
-
-            this.code = payload.substring(0,4);
-            this.reqRes = payload.substring(4,8);
-            this.firewall = payload.substring(8, 32);
-            this.contents = payload.substring(32, payload.length());
-        }
-    }
-/*
-    public String getHeader() {
-        return header;
-    }*/
-
-    public int getPayloadSize() {
-      return payloadSize;
-    }
-
-    public String getCode() {
-        return code;
+            this.rowNum = Integer.parseInt(token.nextToken());
+        if (token.hasMoreTokens())
+            this.saddr = token.nextToken();
+        if (token.hasMoreTokens())
+            this.src = token.nextToken();
+        if (token.hasMoreTokens())
+            this.daddr = token.nextToken();
+        if (token.hasMoreTokens())
+            this.dst = token.nextToken();
+        if (token.hasMoreTokens())
+            this.protocol = token.nextToken();
+        if (token.hasMoreTokens())
+            this.tcpudp = token.nextToken();
+        if (token.hasMoreTokens())
+            this.warn = token.nextToken();
+        if (token.hasMoreTokens())
+            this.danger = token.nextToken();
+        if (token.hasMoreTokens())
+            this.packetCount = token.nextToken();
+        if (token.hasMoreTokens())
+            this.totalbytes = token.nextToken();
     }
 
-    public String getReqRes() {
-        return reqRes;
+    public int getRowNum() {
+      return rowNum;
     }
 
-    public String getFirewall() {
-        return firewall;
+    public String getSaddr() {
+        return saddr;
     }
 
-    public String getContents() {
-        return contents;
+    public String getSrc() {
+        return src;
+    }
+
+    public String getDaddr() {
+        return daddr;
+    }
+
+    public String getDst() {
+        return dst;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getTcpudp() {
+        return tcpudp;
+    }
+
+    public String getWarn() {
+        return warn;
+    }
+
+    public String getDanger() {
+        return danger;
+    }
+
+    public String getPacketCount() {
+        return packetCount;
+    }
+
+    public String getTotalbytes() {
+        return totalbytes;
     }
 }

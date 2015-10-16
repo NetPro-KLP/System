@@ -4,6 +4,14 @@ import com.nhncorp.mods.socket.io.SocketIOSocket;
 
 import java.lang.Math;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.DataOutputStream;
+
+import java.nio.ByteBuffer;
+
+import java.net.Socket;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,6 +22,7 @@ import org.vertx.java.core.json.JsonArray;
 
 public class MysqlHandler {
 
+  private Socket firewallSocket;
   private SocketIOSocket socket;
   private Connection firewallConn = null;
   private boolean isConnected;
@@ -24,7 +33,7 @@ public class MysqlHandler {
 
       this.isConnected = false;
       this.isRealtime = false;
-      
+
       while (!this.isConnected) {
         try {
             this.socket = socket;
@@ -344,26 +353,54 @@ public class MysqlHandler {
       }
     }
 
+    public void notifyToFirewall(String emitTo, String admin_idx,
+        String action, String contents, String date) {
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              firewallSocket = new Socket("172.16.101.12", 30001);
+              OutputStream outputStream = firewallSocket.getOutputStream();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        };
+
+        thread.start();
+      } else {
+        resToWeb(emitTo, "400", "Database connection failed");
+      }
+    }
+
+
+
     public void insertLogHandler(String emitTo, String admin_idx,
         String action, String date) {
 
       if (this.isConnected) {
-        try {
-          java.sql.Statement st = getSt();
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              java.sql.Statement st = getSt();
 
-          String query = "INSERT INTO `log`(`admin_idx`,`action`,`date`) VALUES(" + admin_idx
-            + ", '" + action + "', '" + date + "')";
+              String query = "INSERT INTO `log`(`admin_idx`,`action`,`date`) VALUES(" + admin_idx
+                + ", '" + action + "', '" + date + "')";
 
-          st.executeUpdate(query);
+              st.executeUpdate(query);
 
-          // insert 성공(201)
-          resToWeb(emitTo, "201", null);
+              // insert 성공(201)
+              resToWeb(emitTo, "201", null);
 
-        } catch (SQLException sqex) {
-          System.out.println("SQLException: " + sqex.getMessage());
-          System.out.println("SQLState: " + sqex.getSQLState());
-          resToWeb(emitTo, "400", "insert log: somethings were error");
-        }
+            } catch (SQLException sqex) {
+              System.out.println("SQLException: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+              resToWeb(emitTo, "400", "insert log: somethings were error");
+            }
+          }
+        };
+
+        thread.start();
       } else {
         resToWeb(emitTo, "400", "Database connection failed");
       }
