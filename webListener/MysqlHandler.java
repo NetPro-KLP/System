@@ -290,6 +290,51 @@ public class MysqlHandler {
       if (this.isConnected) {
         Thread thread = new Thread() {
           public void run() {
+            try {
+              java.sql.Statement st = getSt();
+              String barQuery = "";
+              String lineQuery = "";
+              String piQuery = "";
+              String realtimeChartQuery = "";
+              String axisLineQuery = "";
+
+              JsonObject reply = new JsonObject();
+              ResultSet rs = null;
+
+              rs = st.executeQuery(barQuery);
+
+              if(st.execute(barQuery))
+                rs = st.getResultSet();
+
+              rs = st.executeQuery(lineQuery);
+
+              if(st.execute(lineQuery))
+                rs = st.getResultSet();
+
+              rs = st.executeQuery(piQuery);
+
+              if(st.execute(piQuery))
+                rs = st.getResultSet();
+
+              rs = st.executeQuery(realtimeChartQuery);
+
+              if(st.execute(realtimeChartQuery))
+                rs = st.getResultSet();
+
+              rs = st.executeQuery(axisLineQuery);
+
+              if(st.execute(axisLineQuery))
+                rs = st.getResultSet();
+
+              reply.putNumber("code", 200);
+
+              socket.emit(emitTo, reply);
+
+            } catch (SQLException sqex) {
+              System.out.println("SQLException: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+              resToWeb(emitTo, "400", "realtimeOn: somethings were error");
+            }
           }
         };
 
@@ -320,7 +365,6 @@ public class MysqlHandler {
           resToWeb(emitTo, "400", "insert log: somethings were error");
         }
       } else {
-        // 에러날 경우
         resToWeb(emitTo, "400", "Database connection failed");
       }
     }
