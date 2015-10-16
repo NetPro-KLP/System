@@ -59,21 +59,27 @@ public class MysqlHandler {
     }
 
     private void resToWeb(String emitTo, String code, String body) {
-      JsonObject reply = null;
+      Thread thread = new Thread() {
+        public void run() {
+          JsonObject reply = null;
 
-      if (this.isConnected) {
-        if (code != null) {
-          reply = new JsonObject().putNumber("code", Integer.parseInt(code));
-          if (body != null) {
-            reply.putString("body", body);
+          if (isConnected) {
+            if (code != null) {
+              reply = new JsonObject().putNumber("code", Integer.parseInt(code));
+              if (body != null) {
+                reply.putString("body", body);
+              }
+            }
+          } else {
+            reply = new JsonObject().putString("code", "400");
+            reply.putString("body", "Database connection failed");
           }
-        }
-      } else {
-        reply = new JsonObject().putString("code", "400");
-        reply.putString("body", "Database connection failed");
-      }
 
-      this.socket.emit(emitTo, reply);
+          socket.emit(emitTo, reply);
+        }
+      };
+
+      thread.start();
     }
 
     public void realtimeOn(String emitTo) {
@@ -274,6 +280,20 @@ public class MysqlHandler {
 
       if (this.isConnected) {
         resToWeb(emitTo, "204", null);
+      } else {
+        resToWeb(emitTo, "400", "Database connection failed");
+      }
+    }
+
+    public void trafficStatistics(String emitTo) {
+
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+          }
+        };
+
+        thread.start();
       } else {
         resToWeb(emitTo, "400", "Database connection failed");
       }
