@@ -2,6 +2,37 @@
 
 ##FirewallServer
 
+####expired data protocol
+```
+header 12 byte
+- firewall ip	 	4byte			
+- row number 		4byte			
+- code 				4byte			
+```
+```
+payload 31byte
+- source_ip 		4byte
+- source_port 		4byte
+- destination_ip 	4byte
+- destination_port 	4byte
+- protocol 			4byte
+- tcp/udp 			1byte
+- warn 				4byte
+- danger 			4byte
+- packet_count 		4byte
+- totalbytes 		4byte
+```
+####initialize ruleset protocol
+```
+header 4byte
+- ruleset number	4byte
+```
+```
+payload (N)byte
+- data length		4byte
+- data				(N)byte
+```
+
 ##WebServer
 
 ####response to web front-end
