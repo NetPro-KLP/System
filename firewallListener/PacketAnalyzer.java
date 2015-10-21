@@ -16,6 +16,8 @@ public class PacketAnalyzer {
     private String danger;
     private String packetCount;
     private String totalbytes;
+    private String starttime;
+    private String endtime;
 
     public PacketAnalyzer (String packet) {
         StringTokenizer token = new StringTokenizer(packet, "|");
@@ -42,6 +44,10 @@ public class PacketAnalyzer {
             this.packetCount = token.nextToken();
         if (token.hasMoreTokens())
             this.totalbytes = token.nextToken();
+        if (token.hasMoreTokens())
+            this.starttime = token.nextToken();
+        if (token.hasMoreTokens())
+            this.endtime = token.nextToken();
     }
 
     public int getRowNum() {
@@ -86,5 +92,13 @@ public class PacketAnalyzer {
 
     public String getTotalbytes() {
         return totalbytes;
+    }
+
+    public String getStarttime() {
+      return starttime;
+    }
+
+    public String getEndtime() {
+      return endtime;
     }
 }

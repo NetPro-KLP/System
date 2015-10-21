@@ -132,10 +132,19 @@ public class Dispatcher {
                       totalbytesByte.length);
                   int totalbytes = byteToInt(totalbytesByte);
 
+                  byte[] starttimeByte = new byte[19];
+                  dataInputStream.read(starttimeByte, 0, starttimeByte.length);
+                  String starttime = new String(starttimeByte);
+
+                  byte[] endtimeByte = new byte[19];
+                  dataInputStream.read(endtimeByte, 0, endtimeByte.length);
+                  String endtime = new String(endtimeByte);
+
                   QueueListenedInfo queueListenedInfo = new QueueListenedInfo (
                       socket, firewallIp, code, rowNum + "|" + saddr + "|" + src + "|" + daddr
                       + "|" + dst + "|" + protocol + "|" + tcpudp + "|" + warn
-                      + "|" + danger + "|" + packetCount + "|" + totalbytes);
+                      + "|" + danger + "|" + packetCount + "|" + totalbytes
+                      + "|" + starttime + "|" + endtime);
                   queue.offer(queueListenedInfo);
                 }
 

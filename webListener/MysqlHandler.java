@@ -115,8 +115,8 @@ public class MysqlHandler {
             String trafficQuery = "SELECT u.idx, u.ip, u.connectedAt, u.status, p.starttime, p.endtime"
               + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
               + " FROM users u JOIN packets p ON u.ip = p.source_ip"
-              + " OR u.ip = p.destination_ip GROUP BY u.idx, p.starttime, p.endtime"
-              + " ORDER BY u.idx, p.starttime, p.endtime DESC";
+              + " OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime"
+              + " ORDER BY u.idx, p.endtime DESC";
 
             double maxTraffic = Math.pow(2, 30);
 
@@ -150,6 +150,8 @@ public class MysqlHandler {
                   int warn = rs.getInt(9);
 
                   connectedAt = connectedAt.substring(0,19);
+                  starttime = starttime.substring(0,19);
+                  endtime = endtime.substring(0,19);
 
                   if (preIdx == -1) {
                     preIdx = idx;
@@ -265,7 +267,7 @@ public class MysqlHandler {
                 socket.emit(emitTo, reply);
 
                 try {
-                  Thread.sleep(4000);
+                  Thread.sleep(1000);
                 } catch (InterruptedException e) {
                   e.printStackTrace();
                 }

@@ -94,17 +94,19 @@ public class EventHandler {
           String danger = packetAnalyzer.getDanger();
           String packetCount = packetAnalyzer.getPacketCount();
           String totalbytes = packetAnalyzer.getTotalbytes();
+          String starttime = packetAnalyzer.getStarttime();
+          String endtime = packetAnalyzer.getEndtime();
 
           java.sql.Statement st = null;
           st = this.firewallConn.createStatement();
 
           String query = "INSERT INTO `packets`(`source_ip`, `source_port`,"
                  + "`destination_ip`, `destination_port`, `protocol`, `tcpudp`,"
-                 + "`packet_count`, `totalbytes`,"/* `starttime`, `endtime`,"*/
+                 + "`packet_count`, `totalbytes`, `starttime`, `endtime`,"
                  + "`danger`, `warn`) VALUES(" + saddr + ", " + src + ", "
                  + daddr + ", " + dst + ", " + protocol + ", " + tcpudp + ", "
-                 + packetCount + ", " + totalbytes + ", " /* + starttime + ", "
-                 + endtime + ", " */ + danger + ", " + warn + ")";
+                 + packetCount + ", " + totalbytes + ", " + starttime + ", "
+                 + endtime + ", " + danger + ", " + warn + ")";
 
           st.executeUpdate(query);
 
