@@ -11,7 +11,7 @@ import java.util.LinkedList;
 
 public class Dispatcher {
 	
-    static final String QUEUENUMTHREADS = "2";
+    static final String QUEUENUMTHREADS = "3";
     static final String DISPATCHNUMTHREADS = "1";
     static final String THREADPROP = "Threads";
 
@@ -59,14 +59,7 @@ public class Dispatcher {
 
             try {
                 Socket socket = serverSocket.accept();
-
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-                //int headerSize = dataInputStream.readInt();
-
-                //dataInputStream = new DataInputStream(socket.getInputStream());
-                //int payloadSize = dataInputStream.readInt();
-
-                //InputStream inputStream = socket.getInputStream();
 
                 byte[] firewallIpByte = new byte[4];
                 dataInputStream.read(firewallIpByte, 0, firewallIpByte.length);
@@ -76,12 +69,6 @@ public class Dispatcher {
                 dataInputStream.read(rowNumByte, 0, rowNumByte.length);
                 int rowNum = byteToInt(rowNumByte);
 
-                //byte[] headerBuffer = new byte[headerSize];
-                //inputStream.read(headerBuffer);
-                //String header = new String(headerBuffer);
-
-                //inputStream = socket.getInputStream();
-
                 byte[] codeBuffer = new byte[4];
                 dataInputStream.read(codeBuffer, 0, codeBuffer.length);
                 String code = new String(codeBuffer);
@@ -90,7 +77,7 @@ public class Dispatcher {
                   QueueListenedInfo queueListenedInfo = new QueueListenedInfo(
                       socket, firewallIp, code);
                   queue.offer(queueListenedInfo);
-                } else {
+                } else if (code.equals("exp") || code.equals("alm")) {
                   byte[] saddrByte = new byte[4];
                   dataInputStream.read(saddrByte, 0, saddrByte.length);
                   String saddr = addrToString(saddrByte);
@@ -106,10 +93,6 @@ public class Dispatcher {
                   byte[] dstByte = new byte[2];
                   dataInputStream.read(dstByte, 0, dstByte.length);
                   String dst = portToString(dstByte);
-
-                  byte[] protocolByte = new byte[2];
-                  dataInputStream.read(protocolByte, 0, protocolByte.length);
-                  String protocol = portToString(protocolByte);
 
                   byte[] tcpudpByte = new byte[1];
                   dataInputStream.read(tcpudpByte, 0, tcpudpByte.length);
@@ -140,11 +123,37 @@ public class Dispatcher {
                   dataInputStream.read(endtimeByte, 0, endtimeByte.length);
                   String endtime = new String(endtimeByte);
 
-                  QueueListenedInfo queueListenedInfo = new QueueListenedInfo (
-                      socket, firewallIp, code, rowNum + "|" + saddr + "|" + src + "|" + daddr
-                      + "|" + dst + "|" + protocol + "|" + tcpudp + "|" + warn
-                      + "|" + danger + "|" + packetCount + "|" + totalbytes
-                      + "|" + starttime + "|" + endtime);
+                  QueueListenedInfo queueListenedInfo = null;
+                  String packet = saddr + "|" + src + "|" + daddr
+                        + "|" + dst + "|" + tcpudp + "|" + warn
+                        + "|" + danger + "|" + packetCount + "|" + totalbytes
+                        + "|" + starttime + "|" + endtime;
+
+                  if (code.equals("exp")) {
+                    queueListenedInfo = new QueueListenedInfo (
+                        socket, firewallIp, code, rowNum + "|" + packet);
+                  } else {
+                    byte[] nameByte = new byte[100];
+                    dataInputStream.read(nameByte, 0, nameByte.length);
+                    String name = new String(nameByte);
+
+                    byte[] hazardByte = new byte[4];
+                    dataInputStream.read(hazardByte, 0, hazardByte.length);
+                    int hazard = byteToInt(hazardByte);
+
+                    byte[] payloadByte = new byte[1000];
+                    dataInputStream.read(payloadByte, 0, payloadByte.length);
+                    String payload = new String(payloadByte);
+
+                    byte[] createdAtByte = new byte[19];
+                    dataInputStream.read(createdAtByte, 0, createdAtByte.length);
+                    String createdAt = new String(createdAtByte);
+
+                    queueListenedInfo = new QueueListenedInfo (
+                        socket, firewallIp, code, packet + "|" + name + "|" +
+                        hazard + "|" + payload + "|" + createdAt);
+                  }
+
                   queue.offer(queueListenedInfo);
                 }
 

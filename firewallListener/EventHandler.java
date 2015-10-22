@@ -87,9 +87,8 @@ public class EventHandler {
           String src = packetAnalyzer.getSrc();
           String daddr = packetAnalyzer.getDaddr();
           String dst = packetAnalyzer.getDst();
-          String protocol = packetAnalyzer.getProtocol();
-
           String tcpudp = packetAnalyzer.getTcpudp();
+
           String warn = packetAnalyzer.getWarn();
           String danger = packetAnalyzer.getDanger();
           String packetCount = packetAnalyzer.getPacketCount();
@@ -104,11 +103,67 @@ public class EventHandler {
                  + "`destination_ip`, `destination_port`, `protocol`, `tcpudp`,"
                  + "`packet_count`, `totalbytes`, `starttime`, `endtime`,"
                  + "`danger`, `warn`) VALUES(" + saddr + ", " + src + ", "
-                 + daddr + ", " + dst + ", " + protocol + ", " + tcpudp + ", "
+                 + daddr + ", " + dst + ", " + tcpudp + ", "
                  + packetCount + ", " + totalbytes + ", " + starttime + ", "
                  + endtime + ", " + danger + ", " + warn + ")";
 
           st.executeUpdate(query);
+
+        } catch (SQLException sqex) {
+          System.out.println("SQLExeption: " + sqex.getMessage());
+          System.out.println("SQLState: " + sqex.getSQLState());
+        }
+      } else {
+      }
+    }
+
+    public void alarmEvent(PacketAnalyzer packetAnalyzer) {
+      if (this.isConnected) {
+        try {
+          String saddr = packetAnalyzer.getSaddr();
+          String src = packetAnalyzer.getSrc();
+          String daddr = packetAnalyzer.getDaddr();
+          String dst = packetAnalyzer.getDst();
+          String tcpudp = packetAnalyzer.getTcpudp();
+
+          String warn = packetAnalyzer.getWarn();
+          String danger = packetAnalyzer.getDanger();
+          String packetCount = packetAnalyzer.getPacketCount();
+          String totalbytes = packetAnalyzer.getTotalbytes();
+          String starttime = packetAnalyzer.getStarttime();
+          String endtime = packetAnalyzer.getEndtime();
+
+          String name = packetAnalyzer.getName();
+          String hazard = packetAnalyzer.getHazard();
+          String payload = packetAnalyzer.getPayload();
+          String createdAt = packetAnalyzer.getCreatedAt();
+
+          ResultSet rs = null;
+          java.sql.Statement st = null;
+          st = this.firewallConn.createStatement();
+
+          String packetIdxQuery = "SELECT idx FROM packets WHERE source_ip = "
+            + saddr + ", source_port = " + src + ", destination_ip = " + daddr
+            + ", destination_port = " + dst + ", tcpudp = " + tcpudp
+            + ", packet_count = " + packetCount + ", totalbytes = "
+            + totalbytes + ", starttime = " + starttime + ", endtime = "
+            + endtime + ", danger = " + danger + ", warn = " + warn;
+
+          rs = st.executeQuery(packetIdxQuery);
+
+          if(st.execute(packetIdxQuery))
+            rs = st.getResultSet();
+
+          int packetIdx;
+
+          while(rs.next()) {
+            packetIdx = rs.getInt(1);
+          }
+
+          String packetLogQuery = "INSERT INTO `packet_log`(`packet_idx`,"
+                 + "`name`";
+
+          st.executeUpdate(packetLogQuery);
 
         } catch (SQLException sqex) {
           System.out.println("SQLExeption: " + sqex.getMessage());

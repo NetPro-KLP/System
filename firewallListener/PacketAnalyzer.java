@@ -9,7 +9,6 @@ public class PacketAnalyzer {
     private String src;
     private String daddr;
     private String dst;
-    private String protocol;
 
     private String tcpudp;
     private String warn;
@@ -19,35 +18,51 @@ public class PacketAnalyzer {
     private String starttime;
     private String endtime;
 
-    public PacketAnalyzer (String packet) {
+    private String name;
+    private String hazard;
+    private String payload;
+    private String createdAt;
+
+    public PacketAnalyzer (String code, String packet) {
         StringTokenizer token = new StringTokenizer(packet, "|");
 
-        if (token.hasMoreTokens())
-            this.rowNum = Integer.parseInt(token.nextToken());
-        if (token.hasMoreTokens())
-            this.saddr = token.nextToken();
-        if (token.hasMoreTokens())
-            this.src = token.nextToken();
-        if (token.hasMoreTokens())
-            this.daddr = token.nextToken();
-        if (token.hasMoreTokens())
-            this.dst = token.nextToken();
-        if (token.hasMoreTokens())
-            this.protocol = token.nextToken();
-        if (token.hasMoreTokens())
-            this.tcpudp = token.nextToken();
-        if (token.hasMoreTokens())
-            this.warn = token.nextToken();
-        if (token.hasMoreTokens())
-            this.danger = token.nextToken();
-        if (token.hasMoreTokens())
-            this.packetCount = token.nextToken();
-        if (token.hasMoreTokens())
-            this.totalbytes = token.nextToken();
-        if (token.hasMoreTokens())
-            this.starttime = token.nextToken();
-        if (token.hasMoreTokens())
-            this.endtime = token.nextToken();
+        if (code.equals("exp") || code.equals("alm")) {
+          if (token.hasMoreTokens() && code.equals("exp"))
+              this.rowNum = Integer.parseInt(token.nextToken());
+          if (token.hasMoreTokens())
+              this.saddr = token.nextToken();
+          if (token.hasMoreTokens())
+              this.src = token.nextToken();
+          if (token.hasMoreTokens())
+              this.daddr = token.nextToken();
+          if (token.hasMoreTokens())
+              this.dst = token.nextToken();
+          if (token.hasMoreTokens())
+              this.tcpudp = token.nextToken();
+          if (token.hasMoreTokens())
+              this.warn = token.nextToken();
+          if (token.hasMoreTokens())
+              this.danger = token.nextToken();
+          if (token.hasMoreTokens())
+              this.packetCount = token.nextToken();
+          if (token.hasMoreTokens())
+              this.totalbytes = token.nextToken();
+          if (token.hasMoreTokens())
+              this.starttime = token.nextToken();
+          if (token.hasMoreTokens())
+              this.endtime = token.nextToken();
+
+          if (code.equals("alm")) {
+            if (token.hasMoreTokens())
+                this.name = token.nextToken();
+            if (token.hasMoreTokens())
+                this.hazard = token.nextToken();
+            if (token.hasMoreTokens())
+                this.payload = token.nextToken();
+            if (token.hasMoreTokens())
+                this.createdAt = token.nextToken();
+          }
+        }
     }
 
     public int getRowNum() {
@@ -68,10 +83,6 @@ public class PacketAnalyzer {
 
     public String getDst() {
         return dst;
-    }
-
-    public String getProtocol() {
-        return protocol;
     }
 
     public String getTcpudp() {
@@ -100,5 +111,21 @@ public class PacketAnalyzer {
 
     public String getEndtime() {
       return endtime;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public String getHazard() {
+      return hazard;
+    }
+
+    public String getPayload() {
+      return payload;
+    }
+
+    public String getCreatedAt() {
+      return createdAt;
     }
 }
