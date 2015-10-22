@@ -6,8 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.net.Socket;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 import java.io.OutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -154,7 +158,7 @@ public class EventHandler {
           if(st.execute(packetIdxQuery))
             rs = st.getResultSet();
 
-          int packetIdx;
+          int packetIdx = 1;
 
           while(rs.next()) {
             packetIdx = rs.getInt(1);
@@ -166,6 +170,28 @@ public class EventHandler {
                  ", " + createdAt + ")";
 
           st.executeUpdate(packetLogQuery);
+
+          String url = "http://172.16.100.61/alarm.php";
+
+          try {
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+            con.setRequestMethod("POST");
+            String urlParameters = "name=" + name + "&hazard=" + hazard + 
+              "&payload=" + payload + "&date=" + createdAt;
+
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(urlParameters);
+            wr.flush();
+            wr.close();
+
+          } catch (MalformedURLException e) {
+            e.printStackTrace();
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
 
         } catch (SQLException sqex) {
           System.out.println("SQLExeption: " + sqex.getMessage());
