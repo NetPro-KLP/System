@@ -324,12 +324,12 @@ public class MysqlHandler {
               if(st.execute(barTcpQuery))
                 rs = st.getResultSet();
 
-              int preTime = -1;
+              String preTime = "init";
               int totalbytesEachTime = 0;
               String preDate = null;
 
-              JsonArray tcpArray = new JsonArray();
-              JsonObject tcpGroup = new JsonObject();
+              JsonArray jsonArray = new JsonArray();
+              JsonObject jsonGroup = new JsonObject();
 
               while (rs.next()) {
                 JsonObject tcpObject = null;
@@ -342,22 +342,22 @@ public class MysqlHandler {
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
-                int curtime = Integer.parseInt(endtime.substring(11,13));
+                String curtime = endtime.substring(11,13);
                 String curdate = endtime.substring(0,11);
 
-                if (preTime == -1) {
+                if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
                   reply.putNumber("code", 200);
                 }
 
-                if (preTime != curtime || !preDate.equals(curdate)) {
+                if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
                   tcpObject = new JsonObject().putNumber("totalbytes",
                       totalbytesEachTime);
-                  tcpArray.addObject(tcpObject);
-                  tcpGroup.putArray(preDate + Integer.toString(preTime), tcpArray);
+                  jsonArray.addObject(tcpObject);
+                  jsonGroup.putArray(preDate + preTime, jsonArray);
 
-                  tcpArray = new JsonArray();
+                  jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
                   preTime = curtime;
                   preDate = curdate;
@@ -369,20 +369,74 @@ public class MysqlHandler {
                 tcpObject.putNumber("warn", warn);
                 tcpObject.putNumber("eachbytes", totalbytes);
                 totalbytesEachTime = totalbytesEachTime + totalbytes;
-                tcpArray.addObject(tcpObject);
+                jsonArray.addObject(tcpObject);
               }
 
-              JsonObject tcpObject = new JsonObject().putNumber("totalbytes", 
+              JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
                   totalbytesEachTime);
-              tcpArray.addObject(tcpObject);
-              tcpGroup.putArray(preDate.substring(0,11) + Integer.toString(preTime), tcpArray);
-              reply.putObject("tcpTraffic", tcpGroup);
-/*
+              jsonArray.addObject(insertObject);
+              jsonGroup.putArray(preDate + preTime, jsonArray);
+              reply.putObject("tcpTraffic", jsonGroup);
+
               rs = st.executeQuery(barUdpQuery);
 
               if(st.execute(barUdpQuery))
                 rs = st.getResultSet();
 
+              preTime = "init";
+              totalbytesEachTime = 0;
+              preDate = null;
+
+              jsonArray = new JsonArray();
+              jsonGroup = new JsonObject();
+
+              while (rs.next()) {
+                JsonObject udpObject = null;
+
+                String starttime = rs.getString(1);
+                String endtime = rs.getString(2);
+                int totalbytes = rs.getInt(3);
+                int danger = rs.getInt(4);
+                int warn = rs.getInt(5);
+
+                starttime = starttime.substring(0,19);
+                endtime = endtime.substring(0,19);
+                String curtime = endtime.substring(11,13);
+                String curdate = endtime.substring(0,11);
+
+                if (preTime.equals("init")) {
+                  preTime = curtime;
+                  preDate = curdate;
+                  reply.putNumber("code", 200);
+                }
+
+                if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                  udpObject = new JsonObject().putNumber("totalbytes",
+                      totalbytesEachTime);
+                  jsonArray.addObject(udpObject);
+                  jsonGroup.putArray(preDate + preTime, jsonArray);
+
+                  jsonArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  preTime = curtime;
+                  preDate = curdate;
+                }
+
+                udpObject = new JsonObject().putString("starttime", starttime);
+                udpObject.putString("endtime", endtime);
+                udpObject.putNumber("danger", danger);
+                udpObject.putNumber("warn", warn);
+                udpObject.putNumber("eachbytes", totalbytes);
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                jsonArray.addObject(udpObject);
+              }
+
+              insertObject = new JsonObject().putNumber("totalbytes", 
+                  totalbytesEachTime);
+              jsonArray.addObject(insertObject);
+              jsonGroup.putArray(preDate + preTime, jsonArray);
+              reply.putObject("udpTraffic", jsonGroup);
+/*
               rs = st.executeQuery(lineQuery);
 
               if(st.execute(lineQuery))
