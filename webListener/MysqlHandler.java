@@ -303,7 +303,14 @@ public class MysqlHandler {
           public void run() {
             try {
               java.sql.Statement st = getSt();
-              String barQuery = "";
+              String barTcpQuery = "SELECT p.starttime, p.endtime, "
+                + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
+                + " ON p.tcpudp = 0 GROUP BY p.endtime DESC";
+
+              String barUdpQuery = "SELECT p.starttime, p.endtime, "
+                + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
+                + " ON p.tcpudp = 1 GROUP BY p.endtime DESC";
+
               String lineQuery = "";
               String piQuery = "";
               String realtimeChartQuery = "";
@@ -312,9 +319,65 @@ public class MysqlHandler {
               JsonObject reply = new JsonObject();
               ResultSet rs = null;
 
-              rs = st.executeQuery(barQuery);
+              rs = st.executeQuery(barTcpQuery);
 
-              if(st.execute(barQuery))
+              if(st.execute(barTcpQuery))
+                rs = st.getResultSet();
+
+              int preTime = -1;
+              int totalbytesEachTime = 0;
+              String preDate = null;
+
+              JsonArray tcpArray = new JsonArray();
+
+              while (rs.next()) {
+                JsonObject tcpObject = null;
+
+                String starttime = rs.getString(1);
+                String endtime = rs.getString(2);
+                int totalbytes = rs.getInt(3);
+                int danger = rs.getInt(4);
+                int warn = rs.getInt(5);
+
+                starttime = starttime.substring(0,19);
+                endtime = endtime.substring(0,19);
+                int curtime = Integer.parseInt(endtime.substring(11,12));
+
+                if (preTime == -1) {
+                  preTime = curtime;
+                  preDate = endtime;
+                  reply.putNumber("code", 200);
+                }
+
+                if (preTime != curtime) {
+                  tcpObject = new JsonObject().putNumber("totalbytes",
+                      totalbytesEachTime);
+                  tcpArray.addObject(tcpObject);
+                  reply.putArray(preDate.substring(0,11) + Integer.toString(preTime), tcpArray);
+
+                  tcpArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  preTime = curtime;
+                  preDate = endtime;
+                }
+
+                tcpObject = new JsonObject().putString("starttime", starttime);
+                tcpObject.putString("endtime", endtime);
+                tcpObject.putNumber("danger", danger);
+                tcpObject.putNumber("warn", warn);
+                tcpObject.putNumber("eachbytes", totalbytes);
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                tcpArray.addObject(tcpObject);
+              }
+
+              JsonObject tcpObject = new JsonObject().putNumber("totalbytes", 
+                  totalbytesEachTime);
+              tcpArray.addObject(tcpObject);
+              reply.putArray(preDate.substring(0,11) + Integer.toString(preTime), tcpArray);
+
+              rs = st.executeQuery(barUdpQuery);
+
+              if(st.execute(barUdpQuery))
                 rs = st.getResultSet();
 
               rs = st.executeQuery(lineQuery);
