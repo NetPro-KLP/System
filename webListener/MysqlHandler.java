@@ -305,11 +305,11 @@ public class MysqlHandler {
               java.sql.Statement st = getSt();
               String barTcpQuery = "SELECT p.starttime, p.endtime, "
                 + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
-                + " ON p.tcpudp = 0 GROUP BY p.endtime DESC";
+                + " WHERE p.tcpudp = 0 GROUP BY p.endtime DESC";
 
               String barUdpQuery = "SELECT p.starttime, p.endtime, "
                 + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
-                + " ON p.tcpudp = 1 GROUP BY p.endtime DESC";
+                + " WHERE p.tcpudp = 1 GROUP BY p.endtime DESC";
 
               String lineQuery = "";
               String piQuery = "";
@@ -329,6 +329,7 @@ public class MysqlHandler {
               String preDate = null;
 
               JsonArray tcpArray = new JsonArray();
+              JsonObject tcpGroup = new JsonObject();
 
               while (rs.next()) {
                 JsonObject tcpObject = null;
@@ -341,24 +342,25 @@ public class MysqlHandler {
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
-                int curtime = Integer.parseInt(endtime.substring(11,12));
+                int curtime = Integer.parseInt(endtime.substring(11,13));
+                String curdate = endtime.substring(0,11);
 
                 if (preTime == -1) {
                   preTime = curtime;
-                  preDate = endtime;
+                  preDate = curdate;
                   reply.putNumber("code", 200);
                 }
 
-                if (preTime != curtime) {
+                if (preTime != curtime || !preDate.equals(curdate)) {
                   tcpObject = new JsonObject().putNumber("totalbytes",
                       totalbytesEachTime);
                   tcpArray.addObject(tcpObject);
-                  reply.putArray(preDate.substring(0,11) + Integer.toString(preTime), tcpArray);
+                  tcpGroup.putArray(preDate + Integer.toString(preTime), tcpArray);
 
                   tcpArray = new JsonArray();
                   totalbytesEachTime = 0;
                   preTime = curtime;
-                  preDate = endtime;
+                  preDate = curdate;
                 }
 
                 tcpObject = new JsonObject().putString("starttime", starttime);
@@ -373,8 +375,9 @@ public class MysqlHandler {
               JsonObject tcpObject = new JsonObject().putNumber("totalbytes", 
                   totalbytesEachTime);
               tcpArray.addObject(tcpObject);
-              reply.putArray(preDate.substring(0,11) + Integer.toString(preTime), tcpArray);
-
+              tcpGroup.putArray(preDate.substring(0,11) + Integer.toString(preTime), tcpArray);
+              reply.putObject("tcpTraffic", tcpGroup);
+/*
               rs = st.executeQuery(barUdpQuery);
 
               if(st.execute(barUdpQuery))
@@ -398,16 +401,14 @@ public class MysqlHandler {
               rs = st.executeQuery(axisLineQuery);
 
               if(st.execute(axisLineQuery))
-                rs = st.getResultSet();
-
-              reply.putNumber("code", 200);
+                rs = st.getResultSet();*/
 
               socket.emit(emitTo, reply);
 
             } catch (SQLException sqex) {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
-              resToWeb(emitTo, "400", "realtimeOn: somethings were error");
+              resToWeb(emitTo, "400", "trafficStatistics: somethings were error");
             }
           }
         };
