@@ -161,7 +161,9 @@ public class EventHandler {
           }
 
           String packetLogQuery = "INSERT INTO `packet_log`(`packet_idx`,"
-                 + "`name`";
+                 + "`name`, `hazard`, `payload`, `createdAt`) VALUES(" +
+                 packetIdx + ", " + name + ", " + hazard + ", " + payload +
+                 ", " + createdAt + ")";
 
           st.executeUpdate(packetLogQuery);
 
