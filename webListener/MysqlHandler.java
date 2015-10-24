@@ -4,6 +4,12 @@ import com.nhncorp.mods.socket.io.SocketIOSocket;
 
 import java.lang.Math;
 
+import java.util.Date;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.DataOutputStream;
@@ -296,13 +302,14 @@ public class MysqlHandler {
       }
     }
 
-    public void trafficStatistics(String emitTo) {
+    public void tcpudp(String emitTo, String unit) {
 
       if (this.isConnected) {
         Thread thread = new Thread() {
           public void run() {
             try {
               java.sql.Statement st = getSt();
+
               String barTcpQuery = "SELECT p.starttime, p.endtime, "
                 + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
                 + " WHERE p.tcpudp = 0 GROUP BY p.endtime DESC";
@@ -310,11 +317,6 @@ public class MysqlHandler {
               String barUdpQuery = "SELECT p.starttime, p.endtime, "
                 + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
                 + " WHERE p.tcpudp = 1 GROUP BY p.endtime DESC";
-
-              String lineQuery = "";
-              String piQuery = "";
-              String realtimeChartQuery = "";
-              String axisLineQuery = "";
 
               JsonObject reply = new JsonObject();
               ResultSet rs = null;
@@ -342,8 +344,20 @@ public class MysqlHandler {
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
-                String curtime = endtime.substring(11,13);
-                String curdate = endtime.substring(0,11);
+
+                String curtime = null;
+                String curdate = null;
+
+                if (unit.equals("hour")) {
+                  curtime = endtime.substring(11,13) + ":00:00";
+                  curdate = endtime.substring(0,11);
+                } else if (unit.equals("min")) {
+                  curtime = endtime.substring(14,16) + ":00";
+                  curdate = endtime.substring(0,14);
+                } else if (unit.equals("sec")) {
+                  curtime = endtime.substring(17,19);
+                  curdate = endtime.substring(0,17);
+                }
 
                 if (preTime.equals("init")) {
                   preTime = curtime;
@@ -355,7 +369,13 @@ public class MysqlHandler {
                   tcpObject = new JsonObject().putNumber("totalbytes",
                       totalbytesEachTime);
                   jsonArray.addObject(tcpObject);
-                  jsonGroup.putArray(preDate + preTime, jsonArray);
+
+                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
+
+                  jsonGroup.putArray(Long.toString(time), jsonArray);
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
@@ -372,11 +392,19 @@ public class MysqlHandler {
                 jsonArray.addObject(tcpObject);
               }
 
-              JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
-                  totalbytesEachTime);
-              jsonArray.addObject(insertObject);
-              jsonGroup.putArray(preDate + preTime, jsonArray);
-              reply.putObject("tcpTraffic", jsonGroup);
+              if (!preTime.equals("init")) {
+                JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
+                    totalbytesEachTime);
+                jsonArray.addObject(insertObject);
+
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                     + "HH:mm:ss");
+                Date date = dateFormat.parse(preDate + preTime);
+                long time = date.getTime() / 1000;
+
+                jsonGroup.putArray(Long.toString(time), jsonArray);
+                reply.putObject("tcpTraffic", jsonGroup);
+              }
 
               rs = st.executeQuery(barUdpQuery);
 
@@ -401,8 +429,20 @@ public class MysqlHandler {
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
-                String curtime = endtime.substring(11,13);
-                String curdate = endtime.substring(0,11);
+
+                String curtime = null;
+                String curdate = null;
+
+                if (unit.equals("hour")) {
+                  curtime = endtime.substring(11,13) + ":00:00";
+                  curdate = endtime.substring(0,11);
+                } else if (unit.equals("min")) {
+                  curtime = endtime.substring(14,16) + ":00";
+                  curdate = endtime.substring(0,14);
+                } else if (unit.equals("sec")) {
+                  curtime = endtime.substring(17,19);
+                  curdate = endtime.substring(0,17);
+                }
 
                 if (preTime.equals("init")) {
                   preTime = curtime;
@@ -414,7 +454,13 @@ public class MysqlHandler {
                   udpObject = new JsonObject().putNumber("totalbytes",
                       totalbytesEachTime);
                   jsonArray.addObject(udpObject);
-                  jsonGroup.putArray(preDate + preTime, jsonArray);
+
+                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
+
+                  jsonGroup.putArray(Long.toString(time), jsonArray);
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
@@ -431,11 +477,19 @@ public class MysqlHandler {
                 jsonArray.addObject(udpObject);
               }
 
-              insertObject = new JsonObject().putNumber("totalbytes", 
-                  totalbytesEachTime);
-              jsonArray.addObject(insertObject);
-              jsonGroup.putArray(preDate + preTime, jsonArray);
-              reply.putObject("udpTraffic", jsonGroup);
+              if (!preTime.equals("init")) {
+                JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
+                    totalbytesEachTime);
+                jsonArray.addObject(insertObject);
+
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                    + "HH:mm:ss");
+                Date date = dateFormat.parse(preDate + preTime);
+                long time = date.getTime() / 1000;
+
+                jsonGroup.putArray(Long.toString(time), jsonArray);
+                reply.putObject("udpTraffic", jsonGroup);
+              }
 /*
               rs = st.executeQuery(lineQuery);
 
@@ -463,6 +517,8 @@ public class MysqlHandler {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
               resToWeb(emitTo, "400", "trafficStatistics: somethings were error");
+            } catch (ParseException e) {
+              e.printStackTrace();
             }
           }
         };
