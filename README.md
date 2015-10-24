@@ -1,5 +1,33 @@
 #NetPro-KLP Back-end
+##Requirement
+```
+clone this open source to '/home/system/' location
+```
+```
+download jar file to libForVert.x(directory) as follows
+- mkdir libForVert.x
+- logback-classic-1.0.6.jar
+- logback-core-1.0.6.jar
+- mod-socket-io-1.0.2.jar
+- mod-socket-io-1.0.3.jar
+- mysql-connector-java-5.1.36-bin.jar
+- slf4j-api-1.6.6.jar
+```
+```
+download jar file to lib(directory) as follows
+- mkdir lib
+- vertx-core-2.0.0-final.jar
+- vertx-platform-2.0.0-final.jar
+```
+```
+1. download vert.x-2.0.0-final version
+2. unzip to '/usr/local/vert.x/' location
+3. edit '.bash_profile' as follows
 
+export VERTX_HOME=/usr/local/vert.x/vert.x-2.0.0-final
+export VERTX=$VERTX_HOME/bin
+export PATH=$VERTX:$PATH
+```
 ##FirewallServer
 
 ####expired data protocol
