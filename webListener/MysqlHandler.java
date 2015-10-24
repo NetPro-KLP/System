@@ -357,6 +357,15 @@ public class MysqlHandler {
                 } else if (unit.equals("sec")) {
                   curtime = endtime.substring(17,19);
                   curdate = endtime.substring(0,17);
+                } else if (unit.equals("day")) {
+                  curtime = endtime.substring(8,10) + " 00:00:00";
+                  curdate = endtime.substring(0,8);
+                } else if (unit.equals("mon")) {
+                  curtime = endtime.substring(5,7) + "-01 00:00:00";
+                  curdate = endtime.substring(0,5);
+                } else if (unit.equals("year")) {
+                  curtime = endtime.substring(0,4) + "-01-01 00:00:00";
+                  curdate = "";
                 }
 
                 if (preTime.equals("init")) {
@@ -442,6 +451,15 @@ public class MysqlHandler {
                 } else if (unit.equals("sec")) {
                   curtime = endtime.substring(17,19);
                   curdate = endtime.substring(0,17);
+                } else if (unit.equals("day")) {
+                  curtime = endtime.substring(8,10) + " 00:00:00";
+                  curdate = endtime.substring(0,8);
+                } else if (unit.equals("mon")) {
+                  curtime = endtime.substring(5,7) + "-01 00:00:00";
+                  curdate = endtime.substring(0,5);
+                } else if (unit.equals("year")) {
+                  curtime = endtime.substring(0,4) + "-01-01 00:00:00";
+                  curdate = "";
                 }
 
                 if (preTime.equals("init")) {

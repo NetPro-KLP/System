@@ -56,6 +56,27 @@ public class Demultiplexer implements Runnable {
             }
         });
 
+        socket.on("tcpudp day", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "tcpudp day res";
+              mysqlHandler.tcpudp(emitTo, "day");
+            }
+        });
+
+        socket.on("tcpudp mon", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "tcpudp mon res";
+              mysqlHandler.tcpudp(emitTo, "mon");
+            }
+        });
+
+        socket.on("tcpudp year", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "tcpudp year res";
+              mysqlHandler.tcpudp(emitTo, "year");
+            }
+        });
+
         socket.on("insert", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
                 String target = jsonToString(json, "data");
