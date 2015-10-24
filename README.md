@@ -49,6 +49,8 @@ payload 31byte
 - danger 			4byte
 - packet_count 		4byte
 - totalbytes 		4byte
+- starttime			4byte
+- endtime			4byte
 ```
 ####initialize ruleset protocol
 ```
