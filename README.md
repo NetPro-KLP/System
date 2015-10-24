@@ -22,7 +22,13 @@ download jar file to lib(directory) as follows
 ```
 1. download vert.x-2.0.0-final version
 2. unzip to '/usr/local/vert.x/' location
-3. edit '.bash_profile' as follows
+3. copy jar file to '/usr/local/vert.x/vert.x-2.0.0-final/lib' location as follows
+- logback-classic-1.0.6.jar
+- logback-core-1.0.6.jar
+- mod-socket-io-1.0.3.jar
+- slf4j-api-1.6.6.jar
+- mysql-connector-java-5.1.36-bin.jar
+4. edit '.bash_profile' as follows
 
 export VERTX_HOME=/usr/local/vert.x/vert.x-2.0.0-final
 export VERTX=$VERTX_HOME/bin
