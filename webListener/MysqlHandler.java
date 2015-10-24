@@ -328,6 +328,8 @@ public class MysqlHandler {
 
               String preTime = "init";
               int totalbytesEachTime = 0;
+              int dangerEachTime = 0;
+              int warnEachTime = 0;
               String preDate = null;
 
               JsonArray jsonArray = new JsonArray();
@@ -379,6 +381,14 @@ public class MysqlHandler {
                       totalbytesEachTime);
                   jsonArray.addObject(tcpObject);
 
+                  tcpObject = new JsonObject().putNumber("totaldanger",
+                      dangerEachTime);
+                  jsonArray.addObject(tcpObject);
+
+                  tcpObject = new JsonObject().putNumber("totalwarn",
+                      warnEachTime);
+                  jsonArray.addObject(tcpObject);
+
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
@@ -388,6 +398,8 @@ public class MysqlHandler {
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
                   preTime = curtime;
                   preDate = curdate;
                 }
@@ -398,12 +410,22 @@ public class MysqlHandler {
                 tcpObject.putNumber("warn", warn);
                 tcpObject.putNumber("eachbytes", totalbytes);
                 totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
                 jsonArray.addObject(tcpObject);
               }
 
               if (!preTime.equals("init")) {
                 JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
                     totalbytesEachTime);
+                jsonArray.addObject(insertObject);
+
+                insertObject = new JsonObject().putNumber("totaldanger",
+                    dangerEachTime);
+                jsonArray.addObject(insertObject);
+
+                insertObject = new JsonObject().putNumber("totalwarn",
+                    warnEachTime);
                 jsonArray.addObject(insertObject);
 
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
@@ -473,6 +495,14 @@ public class MysqlHandler {
                       totalbytesEachTime);
                   jsonArray.addObject(udpObject);
 
+                  udpObject = new JsonObject().putNumber("totaldanger",
+                      dangerEachTime);
+                  jsonArray.addObject(udpObject);
+
+                  udpObject = new JsonObject().putNumber("totalwarn",
+                      warnEachTime);
+                  jsonArray.addObject(udpObject);
+
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
@@ -482,6 +512,8 @@ public class MysqlHandler {
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
                   preTime = curtime;
                   preDate = curdate;
                 }
@@ -492,12 +524,22 @@ public class MysqlHandler {
                 udpObject.putNumber("warn", warn);
                 udpObject.putNumber("eachbytes", totalbytes);
                 totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
                 jsonArray.addObject(udpObject);
               }
 
               if (!preTime.equals("init")) {
                 JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
                     totalbytesEachTime);
+                jsonArray.addObject(insertObject);
+
+                insertObject = new JsonObject().putNumber("totaldanger",
+                    dangerEachTime);
+                jsonArray.addObject(insertObject);
+
+                insertObject = new JsonObject().putNumber("totalwarn",
+                    warnEachTime);
                 jsonArray.addObject(insertObject);
 
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
