@@ -141,9 +141,10 @@ public class MysqlHandler {
                 double bytesVariance = 0;
                 double dangerVariance = 0;
                 double warnVariance = 0;
+                String endtime = null;
 
                 while(rs.next()) {
-                  String endtime = rs.getString(1);
+                  endtime = rs.getString(1);
                   int bytes = rs.getInt(2);
                   int danger = rs.getInt(3);
                   int warn = rs.getInt(4);
@@ -164,6 +165,9 @@ public class MysqlHandler {
                     if (startDay != day) {
                       curr = curr + 1;
                       if (curr == 1) {
+                        if (startTime == 0)
+                          startTime = 5;
+
                         double weight = (double)86400 / (double)startTime;
                         totalbytes = (int)((double)totalbytes * weight);
                         totaldanger = (int)((double)totaldanger * weight);
@@ -195,6 +199,9 @@ public class MysqlHandler {
 
                 if (curr == 0) {
                   curr = 1;
+                  if (startTime == 0)
+                    startTime = 5;
+
                   double weight = (double)86400 / (double)startTime;
                   totalbytes = (int)((double)totalbytes * weight);
                   totaldanger = (int)((double)totaldanger * weight);
@@ -204,6 +211,25 @@ public class MysqlHandler {
                   dangerQueue.offer(totaldanger);
                   warnQueue.offer(totalwarn);
                 } else if (curr <= 8) {
+                  curr = curr + 1;
+
+                  startHour = Integer.parseInt(endtime.substring(11,13));
+                  startMin = Integer.parseInt(endtime.substring(14,16));
+                  startSec = Integer.parseInt(endtime.substring(17,19));
+                  startTime = startHour * 3600 + startMin * 60 + startSec;
+
+                  if (startTime == 86400)
+                    startTime = 86395;
+
+                  double weight =(int)((double)86400 / ((double)86400 -
+                        (double)startTime));
+                  totalbytes = currbytes + (int)((double)(totalbytes - currbytes)
+                      * weight);
+                  totaldanger = currdanger + (int)((double)(totaldanger -
+                        currdanger) * weight);
+                  totalwarn = currwarn + (int)((double)(totalwarn - currwarn)
+                      * weight);
+
                   bytesQueue.offer(totalbytes - currbytes);
                   dangerQueue.offer(totalbytes - currdanger);
                   warnQueue.offer(totalwarn - currwarn);
