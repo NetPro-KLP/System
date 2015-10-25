@@ -5,6 +5,8 @@ import com.nhncorp.mods.socket.io.SocketIOSocket;
 import java.lang.Math;
 
 import java.util.Date;
+import java.util.Queue;
+import java.util.LinkedList;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -97,6 +99,171 @@ public class MysqlHandler {
       thread.start();
     }
 
+    public void predictSecurity(String emitTo, String unit) {
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            java.sql.Statement st = getSt();
+
+            String query = "SELECT p.endtime"
+              + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
+              + " FROM users u JOIN packets p ON (u.ip = p.source_ip"
+              + " OR u.ip = p.destination_ip) AND (u.status = 0) GROUP BY "
+              + "p.endtime ORDER BY p.endtime DESC";
+
+            int totalbytes = 0;
+            int totaldanger = 0;
+            int totalwarn = 0;
+
+            try {
+                JsonObject reply = new JsonObject();
+                ResultSet rs = null;
+
+                rs = st.executeQuery(query);
+
+                if(st.execute(query))
+                  rs = st.getResultSet();
+
+                Queue<Integer> bytesQueue = new LinkedList<Integer>();
+                Queue<Integer> dangerQueue = new LinkedList<Integer>();
+                Queue<Integer> warnQueue = new LinkedList<Integer>();
+
+                boolean flag = true;
+                int startDay = 0;
+                int curr = 0;
+                int currbytes = 0;
+                int currdanger = 0;
+                int currwarn = 0;
+                double bytesVariance = 0;
+                double dangerVariance = 0;
+                double warnVariance = 0;
+
+                while(rs.next()) {
+                  String endtime = rs.getString(1);
+                  int bytes = rs.getInt(2);
+                  int danger = rs.getInt(3);
+                  int warn = rs.getInt(4);
+
+                  endtime = endtime.substring(0,19);
+                  int day = Integer.parseInt(endtime.substring(8,10));
+
+                  if (flag)
+                    flag = !flag;
+
+                  totalbytes = totalbytes + bytes;
+                  totaldanger = totaldanger + danger;
+                  totalwarn = totalwarn + warn;
+
+                  if (unit.equals("tomorrow")) {
+                    if (curr >= 9) break;
+                    if (startDay != day) {
+                      curr = curr + 1;
+                      bytesQueue.offer(totalbytes - currbytes);
+                      dangerQueue.offer(totaldanger - currdanger);
+                      warnQueue.offer(totalwarn - currwarn);
+
+                      currbytes = totalbytes;
+                      currdanger = totaldanger;
+                      currwarn = totalwarn;
+                      startDay = day;
+                    }
+                  } else if (unit.equals("week")) {
+                  }
+
+                }
+
+                if (curr == 0) {
+                  curr = 1;
+                  bytesQueue.offer(totalbytes);
+                  dangerQueue.offer(totaldanger);
+                  warnQueue.offer(totalwarn);
+                }
+
+                double bytesAvr = (double)totalbytes/(double)curr;
+                double warnAvr = (double)totalwarn/(double)curr;
+                double dangerAvr = (double)totaldanger/(double)curr;
+
+                reply.putNumber("dangerAvr", dangerAvr);
+                reply.putNumber("warnAvr", warnAvr);
+                reply.putNumber("bytesAvr", bytesAvr);
+
+                int divisor = bytesQueue.size();
+                double dangerStandardDeviation = 0;
+                double warnStandardDeviation = 0;
+                double bytesStandardDeviation = 0;
+
+                while (bytesQueue.peek() != null) {
+                  bytesVariance = bytesVariance +
+                    Math.pow((double)bytesQueue.poll() - bytesAvr, 2);
+                }
+
+                bytesVariance = bytesVariance / (double)divisor;
+                bytesStandardDeviation = Math.pow(bytesVariance, 0.5);
+
+                divisor = warnQueue.size();
+
+                while (warnQueue.peek() != null) {
+                  warnVariance = warnVariance +
+                    Math.pow((double)warnQueue.poll() - warnAvr, 2);
+                }
+
+                warnVariance = warnVariance / (double)divisor;
+                warnStandardDeviation = Math.pow(warnVariance, 0.5);
+
+                divisor = dangerQueue.size();
+
+                while (dangerQueue.peek() != null) {
+                  dangerVariance = dangerVariance +
+                    Math.pow((double)dangerQueue.poll() - dangerAvr, 2);
+                }
+
+                dangerVariance = dangerVariance / (double)divisor;
+                dangerStandardDeviation = Math.pow(dangerVariance, 0.5);
+
+                reply.putNumber("dangerVariance", dangerVariance);
+                reply.putNumber("warnVariance", warnVariance);
+                reply.putNumber("bytesVariance", bytesVariance);
+
+                reply.putNumber("dangerStandardDeviation",
+                    dangerStandardDeviation);
+                reply.putNumber("warnStandardDeviation",
+                    warnStandardDeviation);
+                reply.putNumber("bytesStandardDeviation",
+                    bytesStandardDeviation);
+
+                double dangerLow = dangerAvr - (1.96 * dangerStandardDeviation);
+                double dangerHigh = dangerAvr + (1.96 *
+                    dangerStandardDeviation);
+
+                double warnLow = warnAvr - (1.96 * warnStandardDeviation);
+                double warnHigh = warnAvr + (1.96 * warnStandardDeviation);
+
+                double bytesLow = bytesAvr - (1.96 * bytesStandardDeviation);
+                double bytesHigh = bytesAvr + (1.96 * bytesStandardDeviation);
+
+                reply.putNumber("dangerLow", dangerLow);
+                reply.putNumber("dangerHigh", dangerHigh);
+                reply.putNumber("warnLow", warnLow);
+                reply.putNumber("warnHigh", warnHigh);
+                reply.putNumber("bytesLow", bytesLow);
+                reply.putNumber("bytesHigh", bytesHigh);
+                reply.putNumber("reliability", 95);
+
+                reply.putNumber("code", 200);
+                socket.emit(emitTo, reply);
+            } catch (SQLException sqex) {
+              System.out.println("SQLException: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+            }
+          }
+        };
+
+        thread.start();
+      } else {
+        resToWeb(emitTo, "400", "Database connection failed");
+      }
+    }
+
     public void realtimeOn(String emitTo) {
 
       this.isRealtime = true;
@@ -161,7 +328,6 @@ public class MysqlHandler {
 
                   if (preIdx == -1) {
                     preIdx = idx;
-                    reply.putNumber("code", 200);
                   }
 
                   if (preIdx != idx) {
@@ -270,6 +436,7 @@ public class MysqlHandler {
                 // A 내용
                 */
 
+                reply.putNumber("code", 200);
                 socket.emit(emitTo, reply);
 
                 try {
@@ -571,6 +738,7 @@ public class MysqlHandler {
               if(st.execute(axisLineQuery))
                 rs = st.getResultSet();*/
 
+              reply.putNumber("code", 200);
               socket.emit(emitTo, reply);
 
             } catch (SQLException sqex) {

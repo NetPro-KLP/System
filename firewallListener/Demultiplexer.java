@@ -33,6 +33,7 @@ public class Demultiplexer implements Runnable {
             switch(code) {
                 case "ini":
                     eventHandler.initEvent(socket);
+                    outputStream.write("success".getBytes());
                     break;
                 case "exp":
                     packetAnalyzer = new PacketAnalyzer(code, this.packet);
