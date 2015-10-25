@@ -130,6 +130,10 @@ public class MysqlHandler {
 
                 boolean flag = true;
                 int startDay = 0;
+                int startHour = 0;
+                int startMin = 0;
+                int startSec = 0;
+                int startTime = 0;
                 int curr = 0;
                 int currbytes = 0;
                 int currdanger = 0;
@@ -147,20 +151,34 @@ public class MysqlHandler {
                   endtime = endtime.substring(0,19);
                   int day = Integer.parseInt(endtime.substring(8,10));
 
-                  if (flag)
+                  if (flag) {
                     flag = !flag;
-
-                  totalbytes = totalbytes + bytes;
-                  totaldanger = totaldanger + danger;
-                  totalwarn = totalwarn + warn;
+                    startDay = day;
+                    startHour = Integer.parseInt(endtime.substring(11,13));
+                    startMin = Integer.parseInt(endtime.substring(14,16));
+                    startSec = Integer.parseInt(endtime.substring(17,19));
+                    startTime = startHour * 3600 + startMin * 60 + startSec;
+                  }
 
                   if (unit.equals("tomorrow")) {
-                    if (curr >= 9) break;
                     if (startDay != day) {
                       curr = curr + 1;
-                      bytesQueue.offer(totalbytes - currbytes);
-                      dangerQueue.offer(totaldanger - currdanger);
-                      warnQueue.offer(totalwarn - currwarn);
+                      if (curr == 1) {
+                        double weight = (double)86400 / (double)startTime;
+                        totalbytes = (int)((double)totalbytes * weight);
+                        totaldanger = (int)((double)totaldanger * weight);
+                        totalwarn = (int)((double)totalwarn * weight);
+
+                        bytesQueue.offer(totalbytes);
+                        dangerQueue.offer(totaldanger);
+                        warnQueue.offer(totalwarn);
+                      } else {
+                        bytesQueue.offer(totalbytes - currbytes);
+                        dangerQueue.offer(totaldanger - currdanger);
+                        warnQueue.offer(totalwarn - currwarn);
+                      }
+
+                      if (curr >= 9) break;
 
                       currbytes = totalbytes;
                       currdanger = totaldanger;
@@ -170,13 +188,25 @@ public class MysqlHandler {
                   } else if (unit.equals("week")) {
                   }
 
+                  totalbytes = totalbytes + bytes;
+                  totaldanger = totaldanger + danger;
+                  totalwarn = totalwarn + warn;
                 }
 
                 if (curr == 0) {
                   curr = 1;
+                  double weight = (double)86400 / (double)startTime;
+                  totalbytes = (int)((double)totalbytes * weight);
+                  totaldanger = (int)((double)totaldanger * weight);
+                  totalwarn = (int)((double)totalwarn * weight);
+
                   bytesQueue.offer(totalbytes);
                   dangerQueue.offer(totaldanger);
                   warnQueue.offer(totalwarn);
+                } else if (curr <= 8) {
+                  bytesQueue.offer(totalbytes - currbytes);
+                  dangerQueue.offer(totalbytes - currdanger);
+                  warnQueue.offer(totalwarn - currwarn);
                 }
 
                 double bytesAvr = (double)totalbytes/(double)curr;
