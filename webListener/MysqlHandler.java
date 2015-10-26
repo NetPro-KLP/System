@@ -550,7 +550,7 @@ public class MysqlHandler {
                 rs = st.getResultSet();
 
               String preTime = "init";
-              int totalbytesEachTime = 0;
+              double totalbytesEachTime = 0;
               int dangerEachTime = 0;
               int warnEachTime = 0;
               String preDate = null;
@@ -563,7 +563,7 @@ public class MysqlHandler {
 
                 String starttime = rs.getString(1);
                 String endtime = rs.getString(2);
-                int totalbytes = rs.getInt(3);
+                double totalbytes = (double)rs.getFloat(3);
                 int danger = rs.getInt(4);
                 int warn = rs.getInt(5);
 
@@ -677,7 +677,7 @@ public class MysqlHandler {
 
                 String starttime = rs.getString(1);
                 String endtime = rs.getString(2);
-                int totalbytes = rs.getInt(3);
+                double totalbytes = (double)rs.getFloat(3);
                 int danger = rs.getInt(4);
                 int warn = rs.getInt(5);
 
@@ -800,9 +800,309 @@ public class MysqlHandler {
             } catch (SQLException sqex) {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
-              resToWeb(emitTo, "400", "trafficStatistics: somethings were error");
+              resToWeb(emitTo, "400", "tcpudp: somethings were error");
             } catch (ParseException e) {
               e.printStackTrace();
+            }
+          }
+        };
+
+        thread.start();
+      } else {
+        resToWeb(emitTo, "400", "Database connection failed");
+      }
+    }
+
+    public void protocolStatistics(String emitTo) {
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              java.sql.Statement st = getSt();
+              ResultSet rs = null;
+              JsonObject reply = new JsonObject();
+
+              String query = "SELECT source_port, destination_port FROM packets "
+                + "WHERE 1";
+
+              rs = st.executeQuery(query);
+
+              if(st.execute(query))
+                rs = st.getResultSet();
+
+              int TCPMUX = 0;
+              int ECHO = 0;
+              int DISCARD = 0;
+              int DAYTIME = 0;
+              int QOTD = 0;
+              int CHARGEN = 0;
+              int FTP = 0;
+              int SSH = 0;
+              int TELNET = 0;
+              int PRIVATEMAILSYSTEM = 0;
+              int SMTP = 0;
+              int TIME = 0;
+              int TACACS = 0;
+              int DNS = 0;
+              int BOOTPORDHCP = 0;
+              int TFTP = 0;
+              int GOPHER = 0;
+              int FINGER = 0;
+              int HTTP = 0;
+              int KERBEROS = 0;
+              int POP2 = 0;
+              int POP3 = 0;
+              int IDENT = 0;
+              int NNTP = 0;
+              int NTP = 0;
+              int NETBIOS = 0;
+              int IMAP4 = 0;
+              int SNMP = 0;
+              int BGP = 0;
+              int IRC = 0;
+              int LDAP = 0;
+              int HTTPS = 0;
+              int MICROSOFT_DS = 0;
+              int SYSLOG = 0;
+              int LPD = 0;
+              int UUCP = 0;
+              int WHOIS = 0;
+              int NETRJS = 0;
+              int SQL = 0;
+              int IPX = 0;
+              int MPP = 0;
+              int COMMERCE = 0;
+              int NAS = 0;
+              int FTPS = 0;
+              int iSCSI = 0;
+              int RRH = 0;
+              int SILC = 0;
+              int VATP = 0;
+              int ACAP = 0;
+              int RRP = 0;
+              int total = 0;
+
+              while(rs.next()) {
+                String source_port = rs.getString(1);
+                String destination_port = rs.getString(2);
+
+                if (source_port.equals("80"))
+                  HTTP = HTTP + 1;
+                else if (source_port.equals("443"))
+                  HTTPS = HTTPS + 1;
+                else if (source_port.equals("1"))
+                  TCPMUX = TCPMUX + 1;
+                else if (source_port.equals("7"))
+                  ECHO = ECHO + 1;
+                else if (source_port.equals("9"))
+                  DISCARD = DISCARD + 1;
+                else if (source_port.equals("13"))
+                  DAYTIME = DAYTIME + 1;
+                else if (source_port.equals("17"))
+                  QOTD = QOTD + 1;
+                else if (source_port.equals("19"))
+                  CHARGEN = CHARGEN + 1;
+                else if (source_port.equals("20") || source_port.equals("21"))
+                  FTP = FTP + 1;
+                else if (source_port.equals("22"))
+                  SSH = SSH + 1;
+                else if (source_port.equals("23"))
+                  TELNET = TELNET + 1;
+                else if (source_port.equals("24"))
+                  PRIVATEMAILSYSTEM = PRIVATEMAILSYSTEM + 1;
+                else if (source_port.equals("25"))
+                  SMTP = SMTP + 1;
+                else if (source_port.equals("37"))
+                  TIME = TIME + 1;
+                else if (source_port.equals("43"))
+                  WHOIS = WHOIS + 1;
+                else if (source_port.equals("49"))
+                  TACACS = TACACS + 1;
+                else if (source_port.equals("53"))
+                  DNS = DNS + 1;
+                else if (source_port.equals("67"))
+                  BOOTPORDHCP = BOOTPORDHCP + 1;
+                else if (source_port.equals("69"))
+                  TFTP = TFTP + 1;
+                else if (source_port.equals("70"))
+                  GOPHER = GOPHER + 1;
+                else if (71 <= Integer.parseInt(source_port) &&
+                    Integer.parseInt(source_port) <= 74)
+                  NETRJS = NETRJS + 1;
+                else if (source_port.equals("79"))
+                  FINGER = FINGER + 1;
+                else if (source_port.equals("88"))
+                  KERBEROS = KERBEROS + 1;
+                else if (source_port.equals("109"))
+                  POP2 = POP2 + 1;
+                else if (source_port.equals("110"))
+                  POP3 = POP3 + 1;
+                else if (source_port.equals("113"))
+                  IDENT = IDENT + 1;
+                else if (source_port.equals("118") || source_port.equals("156"))
+                  SQL = SQL + 1;
+                else if (source_port.equals("119"))
+                  NNTP = NNTP + 1;
+                else if (source_port.equals("123"))
+                  NTP = NTP + 1;
+                else if (source_port.equals("139"))
+                  NETBIOS = NETBIOS + 1;
+                else if (source_port.equals("143"))
+                  IMAP4 = IMAP4 + 1;
+                else if (source_port.equals("161") || source_port.equals("162"))
+                  SNMP = SNMP + 1;
+                else if (source_port.equals("179"))
+                  BGP = BGP + 1;
+                else if (source_port.equals("194"))
+                  IRC = IRC + 1;
+                else if (source_port.equals("213"))
+                  IPX = IPX + 1;
+                else if (source_port.equals("218"))
+                  MPP = MPP + 1;
+                else if (source_port.equals("389"))
+                  LDAP = LDAP + 1;
+                else if (source_port.equals("445"))
+                  MICROSOFT_DS = MICROSOFT_DS + 1;
+                else if (source_port.equals("514"))
+                  SYSLOG = SYSLOG + 1;
+                else if (source_port.equals("515"))
+                  LPD = LPD + 1;
+                else if (source_port.equals("540"))
+                  UUCP = UUCP + 1;
+                else if (source_port.equals("542"))
+                  COMMERCE = COMMERCE + 1;
+                else if (source_port.equals("648"))
+                  RRP = RRP + 1;
+                else if (source_port.equals("674"))
+                  ACAP = ACAP + 1;
+                else if (source_port.equals("690"))
+                  VATP = VATP + 1;
+                else if (source_port.equals("706"))
+                  SILC = SILC + 1;
+                else if (source_port.equals("753"))
+                  RRH = RRH + 1;
+                else if (source_port.equals("860"))
+                  iSCSI = iSCSI + 1;
+                else if (source_port.equals("989") ||
+                    source_port.equals("990"))
+                  FTPS = FTPS + 1;
+                else if (source_port.equals("991"))
+                  NAS = NAS + 1;
+                else
+                  total = total - 1;
+
+                total = total + 1;
+              }
+
+              if (HTTP > 0)
+                reply.putNumber("HTTP", HTTP);
+              if (HTTPS > 0)
+                reply.putNumber("HTTPS", HTTPS);
+              if (TCPMUX > 0)
+                reply.putNumber("TCPMUX", TCPMUX);
+              if (ECHO > 0)
+                reply.putNumber("ECHO", ECHO);
+              if (DISCARD > 0 )
+                reply.putNumber("DISCARD", DISCARD);
+              if (DAYTIME > 0 )
+                reply.putNumber("DAYTIME", DAYTIME);
+              if (QOTD > 0)
+                reply.putNumber("QOTD", QOTD);
+              if (CHARGEN > 0)
+                reply.putNumber("CHARGEN", CHARGEN);
+              if (FTP > 0)
+                reply.putNumber("FTP", FTP);
+              if (SSH > 0)
+                reply.putNumber("SSH" ,SSH);
+              if (TELNET > 0)
+                reply.putNumber("Telnet", TELNET);
+              if (PRIVATEMAILSYSTEM > 0)
+                reply.putNumber("Private_Mail_System", PRIVATEMAILSYSTEM);
+              if (SMTP > 0)
+                reply.putNumber("SMTP", SMTP);
+              if (TIME > 0)
+                reply.putNumber("TIME", TIME);
+              if (TACACS > 0)
+                reply.putNumber("TACACS", TACACS);
+              if (DNS > 0)
+                reply.putNumber("DNS", DNS);
+              if (BOOTPORDHCP > 0)
+                reply.putNumber("BOOTPorDHCP", BOOTPORDHCP);
+              if (TFTP > 0)
+                reply.putNumber("TFTP", TFTP);
+              if (GOPHER > 0)
+                reply.putNumber("Gopher", GOPHER);
+              if (FINGER > 0)
+                reply.putNumber("Finger", FINGER);
+              if (KERBEROS > 0)
+                reply.putNumber("Kerberos", KERBEROS);
+              if (POP2 > 0)
+                reply.putNumber("POP2", POP2);
+              if (POP3 > 0)
+                reply.putNumber("POP3" ,POP3);
+              if (IDENT > 0)
+                reply.putNumber("ident", IDENT);
+              if (NNTP > 0)
+                reply.putNumber("NNTP", NNTP);
+              if (NTP > 0)
+                reply.putNumber("NTP", NTP);
+              if (NETBIOS > 0)
+                reply.putNumber("NetBIOS", NETBIOS);
+              if (IMAP4 > 0)
+                reply.putNumber("IMAP4", IMAP4);
+              if (SNMP > 0)
+                reply.putNumber("SNMP", SNMP);
+              if (BGP > 0)
+                reply.putNumber("BGP", BGP);
+              if (IRC > 0)
+                reply.putNumber("IRC", IRC);
+              if (LDAP > 0)
+                reply.putNumber("LDAP", LDAP);
+              if (MICROSOFT_DS > 0)
+                reply.putNumber("Microsoft-DS", MICROSOFT_DS);
+              if (SYSLOG > 0)
+                reply.putNumber("syslog", SYSLOG);
+              if (LPD > 0)
+                reply.putNumber("LPD", LPD);
+              if (UUCP > 0)
+                reply.putNumber("UUCP" ,UUCP);
+              if (WHOIS > 0)
+                reply.putNumber("WHOIS", WHOIS);
+              if (NETRJS > 0)
+                reply.putNumber("NETRJS", NETRJS);
+              if (SQL > 0)
+                reply.putNumber("SQL", SQL);
+              if (IPX > 0)
+                reply.putNumber("IPX", IPX);
+              if (MPP > 0)
+                reply.putNumber("MPP" , MPP);
+              if (COMMERCE > 0)
+                reply.putNumber("commerce", COMMERCE);
+              if (NAS > 0)
+                reply.putNumber("NAS", NAS);
+              if (FTPS > 0)
+                reply.putNumber("FTPS" ,FTPS);
+              if (iSCSI > 0)
+                reply.putNumber("iSCSI", iSCSI);
+              if (RRH > 0)
+                reply.putNumber("RRH", RRH);
+              if (SILC > 0)
+                reply.putNumber("SILC" ,SILC);
+              if (VATP > 0)
+                reply.putNumber("VATP", VATP);
+              if (ACAP > 0)
+                reply.putNumber("ACAP", ACAP);
+              if (RRP > 0)
+                reply.putNumber("RRP" ,RRP);
+
+              reply.putNumber("total", total);
+
+              reply.putNumber("code", 200);
+              socket.emit(emitTo, reply);
+            } catch (SQLException sqex) {
+              System.out.println("SQLException: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+              resToWeb(emitTo, "400", "protocol statistics: somethings were error");
             }
           }
         };
