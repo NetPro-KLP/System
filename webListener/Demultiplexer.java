@@ -91,6 +91,48 @@ public class Demultiplexer implements Runnable {
             }
         });
 
+        socket.on("inoutbound traffic sec", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic sec res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "sec");
+            }
+        });
+
+        socket.on("inoutbound traffic min", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic min res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "min");
+            }
+        });
+
+        socket.on("inoutbound traffic hour", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic hour res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "hour");
+            }
+        });
+
+        socket.on("inoutbound traffic day", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic day res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "day");
+            }
+        });
+
+        socket.on("inoutbound traffic mon", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic mon res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "mon");
+            }
+        });
+
+        socket.on("inoutbound traffic year", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic year res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "year");
+            }
+        });
+
         socket.on("insert", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
                 String target = jsonToString(json, "data");
