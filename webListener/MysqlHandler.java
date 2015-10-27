@@ -336,8 +336,6 @@ public class MysqlHandler {
               + " OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime"
               + " ORDER BY u.idx, p.endtime DESC";
 
-            double maxTraffic = Math.pow(2, 30);
-
             try {
               while(isRealtime) {
 
@@ -351,8 +349,8 @@ public class MysqlHandler {
                   rs = st.getResultSet();
 
                 int cnt = 0;
-                int percentage = 0;
                 int preIdx = -1;
+                int divisor = 0;
 
                 while(rs.next()) {
                   JsonObject trafficObject = null;
@@ -373,6 +371,7 @@ public class MysqlHandler {
 
                   if (preIdx == -1) {
                     preIdx = idx;
+                    divisor = traffic / 6;
                   }
 
                   if (preIdx != idx) {
@@ -385,19 +384,16 @@ public class MysqlHandler {
                     cnt++;
 
                   if (cnt <= 20) {
-                    percentage = (int)(((double)traffic / maxTraffic) * 100);
-                    if (percentage > 100)
-                      percentage = 100;
 
                     trafficObject = new JsonObject().putNumber("ip", ip);
                     trafficObject.putString("connectedAt", connectedAt);
                     trafficObject.putNumber("status", status);
                     trafficObject.putString("starttime", starttime);
                     trafficObject.putString("endtime", endtime);
-                    trafficObject.putNumber("traffic", traffic);
                     trafficObject.putNumber("danger", danger);
                     trafficObject.putNumber("warn", warn);
-                    trafficObject.putNumber("trafficPercentage", percentage);
+                    trafficObject.putNumber("trafficPercentage", traffic /
+                        divisor);
                     trafficArray.addObject(trafficObject);
                   }
                 }
@@ -437,7 +433,7 @@ public class MysqlHandler {
       }
     }
 
-    public void tcpudp(String emitTo, String unit) {
+    public void tcpudp(String emitTo, String code, String unit) {
 
       if (this.isConnected) {
         Thread thread = new Thread() {
@@ -445,13 +441,30 @@ public class MysqlHandler {
             try {
               java.sql.Statement st = getSt();
 
-              String barTcpQuery = "SELECT p.starttime, p.endtime, "
-                + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
-                + " WHERE p.tcpudp = 0 GROUP BY p.endtime DESC";
+              String barTcpQuery = null;
+              String barUdpQuery = null;
 
-              String barUdpQuery = "SELECT p.starttime, p.endtime, "
-                + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
-                + " WHERE p.tcpudp = 1 GROUP BY p.endtime ORDER BY p.endtime DESC";
+              if (code.equals("traffic")) {
+                barTcpQuery = "SELECT p.starttime, p.endtime, "
+                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
+                  + " WHERE p.tcpudp = 0 GROUP BY p.endtime ORDER BY p.endtime DESC";
+
+                barUdpQuery = "SELECT p.starttime, p.endtime, "
+                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
+                  + " WHERE p.tcpudp = 1 GROUP BY p.endtime ORDER BY p.endtime DESC";
+              } else if (code.equals("user")) {
+                barTcpQuery = "SELECT u.idx, p.starttime, p.endtime, "
+                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets"
+                  + " p JOIN users u ON (u.ip = p.source_ip OR u.ip = p.destination_ip)"
+                  + " AND (p.tcpudp = 0) GROUP BY u.idx, p.endtime ORDER BY "
+                  + "u.idx, p.endtime DESC";
+
+                barUdpQuery = "SELECT u.idx, p.starttime, p.endtime, "
+                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets"
+                  + " p JOIN users u ON (u.ip = p.source_ip OR u.ip = p.destination_ip)"
+                  + " AND (p.tcpudp = 1) GROUP BY u.idx, p.endtime ORDER BY "
+                  + "u.idx, p.endtime DESC";
+              }
 
               JsonObject reply = new JsonObject();
               ResultSet rs = null;
@@ -469,15 +482,34 @@ public class MysqlHandler {
 
               JsonArray jsonArray = new JsonArray();
               JsonObject jsonGroup = new JsonObject();
+              JsonObject jsonUser = new JsonObject();
+
+              int preIdx = -1;
 
               while (rs.next()) {
                 JsonObject tcpObject = null;
 
-                String starttime = rs.getString(1);
-                String endtime = rs.getString(2);
-                double totalbytes = (double)rs.getFloat(3);
-                int danger = rs.getInt(4);
-                int warn = rs.getInt(5);
+                int idx = 0;
+                String starttime = null;
+                String endtime = null;
+                double totalbytes = 0;
+                int danger = 0;
+                int warn = 0;
+
+                if (code.equals("traffic")) {
+                  starttime = rs.getString(1);
+                  endtime = rs.getString(2);
+                  totalbytes = (double)rs.getFloat(3);
+                  danger = rs.getInt(4);
+                  warn = rs.getInt(5);
+                } else if (code.equals("user")) {
+                  idx = rs.getInt(1);
+                  starttime = rs.getString(2);
+                  endtime = rs.getString(3);
+                  totalbytes = (double)rs.getFloat(4);
+                  danger = rs.getInt(5);
+                  warn = rs.getInt(6);
+                }
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
@@ -508,6 +540,7 @@ public class MysqlHandler {
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
+                  preIdx = idx;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
@@ -523,12 +556,19 @@ public class MysqlHandler {
                       warnEachTime);
                   jsonArray.addObject(tcpObject);
 
+
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
 
                   jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                  if (code.equals("user") && preIdx != idx) {
+                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                    jsonGroup = new JsonObject();
+                    preIdx = idx;
+                  }
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
@@ -568,7 +608,12 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
-                reply.putObject("tcpTraffic", jsonGroup);
+                if (code.equals("traffic"))
+                  reply.putObject("tcpTraffic", jsonGroup);
+                else if (code.equals("user")) {
+                  jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                  reply. putObject("tcpTraffic", jsonUser);
+                }
               }
 
               rs = st.executeQuery(barUdpQuery);
@@ -584,15 +629,32 @@ public class MysqlHandler {
 
               jsonArray = new JsonArray();
               jsonGroup = new JsonObject();
+              jsonUser = new JsonObject();
 
               while (rs.next()) {
                 JsonObject udpObject = null;
 
-                String starttime = rs.getString(1);
-                String endtime = rs.getString(2);
-                double totalbytes = (double)rs.getFloat(3);
-                int danger = rs.getInt(4);
-                int warn = rs.getInt(5);
+                int idx = 0;
+                String starttime = null;
+                String endtime = null;
+                double totalbytes = 0;
+                int danger = 0;
+                int warn = 0;
+
+                if (code.equals("traffic")) {
+                  starttime = rs.getString(1);
+                  endtime = rs.getString(2);
+                  totalbytes = (double)rs.getFloat(3);
+                  danger = rs.getInt(4);
+                  warn = rs.getInt(5);
+                } else if (code.equals("user")) {
+                  idx = rs.getInt(1);
+                  starttime = rs.getString(2);
+                  endtime = rs.getString(3);
+                  totalbytes = (double)rs.getFloat(4);
+                  danger = rs.getInt(5);
+                  warn = rs.getInt(6);
+                }
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
@@ -623,6 +685,7 @@ public class MysqlHandler {
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
+                  preIdx = idx;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
@@ -644,6 +707,12 @@ public class MysqlHandler {
                   long time = date.getTime() / 1000;
 
                   jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                  if (code.equals("user") && preIdx != idx) {
+                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                    jsonGroup = new JsonObject();
+                    preIdx = idx;
+                  }
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
@@ -683,7 +752,13 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
-                reply.putObject("udpTraffic", jsonGroup);
+
+                if (code.equals("traffic"))
+                  reply.putObject("udpTraffic", jsonGroup);
+                else if (code.equals("user")) {
+                  jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                  reply.putObject("udpTraffic", jsonUser);
+                }
               }
 
               reply.putNumber("code", 200);

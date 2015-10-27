@@ -11,7 +11,7 @@ public class ServerInitializer {
 
     public static void main (String[] args) {
         int firewallPort = 30000;
-        int webPort = 20000;
+        int webPort = 8888;
 
         System.out.println("Firewall, Web Listener now operate.");
         System.out.println("Firewall Listener Port: " + Integer.toString(firewallPort));

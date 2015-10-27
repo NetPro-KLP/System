@@ -6,5 +6,5 @@
 ) & (
   cd /home/system/System
   source ~/.bash_profile
-  exec vertx run webListener/WebListener.java
+  exec vertx run webListener/WebListener.java > /dev/null
 )
