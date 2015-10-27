@@ -350,7 +350,7 @@ public class MysqlHandler {
 
                 int cnt = 0;
                 int preIdx = -1;
-                int divisor = 0;
+                //int divisor = 0;
 
                 while(rs.next()) {
                   JsonObject trafficObject = null;
@@ -371,7 +371,7 @@ public class MysqlHandler {
 
                   if (preIdx == -1) {
                     preIdx = idx;
-                    divisor = traffic / 6;
+                    //divisor = traffic / 6;
                   }
 
                   if (preIdx != idx) {
@@ -392,8 +392,8 @@ public class MysqlHandler {
                     trafficObject.putString("endtime", endtime);
                     trafficObject.putNumber("danger", danger);
                     trafficObject.putNumber("warn", warn);
-                    trafficObject.putNumber("trafficPercentage", traffic /
-                        divisor);
+                    trafficObject.putNumber("trafficPercentage", traffic/* /
+                        divisor*/);
                     trafficArray.addObject(trafficObject);
                   }
                 }
@@ -780,7 +780,7 @@ public class MysqlHandler {
       }
     }
 
-    public void protocolStatistics(String emitTo) {
+    public void protocolStatistics(String emitTo, String code) {
       if (this.isConnected) {
         Thread thread = new Thread() {
           public void run() {
@@ -789,13 +789,23 @@ public class MysqlHandler {
               ResultSet rs = null;
               JsonObject reply = new JsonObject();
 
-              String query = "SELECT source_port, destination_port FROM packets "
-                + "WHERE 1";
+              String query = null;
+
+              if (code.equals("traffic")) {
+                query = "SELECT source_port FROM packets WHERE 1";
+              } else if (code.equals("user")) {
+                query = "SELECT u.idx, p.source_port FROM packets p JOIN"
+                  + " users u ON u.ip = p.source_ip OR u.ip = p.destination_ip "
+                  + "GROUP BY u.idx, p.source_port ORDER BY u.idx DESC";
+              }
 
               rs = st.executeQuery(query);
 
               if(st.execute(query))
                 rs = st.getResultSet();
+
+              JsonObject userObject = new JsonObject();
+              int preIdx = -1;
 
               int TCPMUX = 0;
               int ECHO = 0;
@@ -850,8 +860,178 @@ public class MysqlHandler {
               int total = 0;
 
               while(rs.next()) {
-                String source_port = rs.getString(1);
-                String destination_port = rs.getString(2);
+                int idx = 0;
+                String source_port = null;
+
+                if (code.equals("traffic"))
+                  source_port = rs.getString(1);
+                else if (code.equals("user")) {
+                  idx = rs.getInt(1);
+                  source_port = rs.getString(2);
+
+                  if (preIdx == -1)
+                    preIdx = idx;
+                  else if (preIdx != idx) {
+
+                    if (HTTP > 0)
+                      userObject.putNumber("HTTP", HTTP);
+                    if (HTTPS > 0)
+                      userObject.putNumber("HTTPS", HTTPS);
+                    if (TCPMUX > 0)
+                      userObject.putNumber("TCPMUX", TCPMUX);
+                    if (ECHO > 0)
+                      userObject.putNumber("ECHO", ECHO);
+                    if (DISCARD > 0 )
+                      userObject.putNumber("DISCARD", DISCARD);
+                    if (DAYTIME > 0 )
+                      userObject.putNumber("DAYTIME", DAYTIME);
+                    if (QOTD > 0)
+                      userObject.putNumber("QOTD", QOTD);
+                    if (CHARGEN > 0)
+                      userObject.putNumber("CHARGEN", CHARGEN);
+                    if (FTP > 0)
+                      userObject.putNumber("FTP", FTP);
+                    if (SSH > 0)
+                      userObject.putNumber("SSH" ,SSH);
+                    if (TELNET > 0)
+                      userObject.putNumber("Telnet", TELNET);
+                    if (PRIVATEMAILSYSTEM > 0)
+                      userObject.putNumber("Private_Mail_System", PRIVATEMAILSYSTEM);
+                    if (SMTP > 0)
+                      userObject.putNumber("SMTP", SMTP);
+                    if (TIME > 0)
+                      userObject.putNumber("TIME", TIME);
+                    if (TACACS > 0)
+                      userObject.putNumber("TACACS", TACACS);
+                    if (DNS > 0)
+                      userObject.putNumber("DNS", DNS);
+                    if (BOOTPORDHCP > 0)
+                      userObject.putNumber("BOOTPorDHCP", BOOTPORDHCP);
+                    if (TFTP > 0)
+                      userObject.putNumber("TFTP", TFTP);
+                    if (GOPHER > 0)
+                      userObject.putNumber("Gopher", GOPHER);
+                    if (FINGER > 0)
+                      userObject.putNumber("Finger", FINGER);
+                    if (KERBEROS > 0)
+                      userObject.putNumber("Kerberos", KERBEROS);
+                    if (POP2 > 0)
+                      userObject.putNumber("POP2", POP2);
+                    if (POP3 > 0)
+                      userObject.putNumber("POP3" ,POP3);
+                    if (IDENT > 0)
+                      userObject.putNumber("ident", IDENT);
+                    if (NNTP > 0)
+                      userObject.putNumber("NNTP", NNTP);
+                    if (NTP > 0)
+                      userObject.putNumber("NTP", NTP);
+                    if (NETBIOS > 0)
+                      userObject.putNumber("NetBIOS", NETBIOS);
+                    if (IMAP4 > 0)
+                      userObject.putNumber("IMAP4", IMAP4);
+                    if (SNMP > 0)
+                      userObject.putNumber("SNMP", SNMP);
+                    if (BGP > 0)
+                      userObject.putNumber("BGP", BGP);
+                    if (IRC > 0)
+                      userObject.putNumber("IRC", IRC);
+                    if (LDAP > 0)
+                      userObject.putNumber("LDAP", LDAP);
+                    if (MICROSOFT_DS > 0)
+                      userObject.putNumber("Microsoft-DS", MICROSOFT_DS);
+                    if (SYSLOG > 0)
+                      userObject.putNumber("syslog", SYSLOG);
+                    if (LPD > 0)
+                      userObject.putNumber("LPD", LPD);
+                    if (UUCP > 0)
+                      userObject.putNumber("UUCP" ,UUCP);
+                    if (WHOIS > 0)
+                      userObject.putNumber("WHOIS", WHOIS);
+                    if (NETRJS > 0)
+                      userObject.putNumber("NETRJS", NETRJS);
+                    if (SQL > 0)
+                      userObject.putNumber("SQL", SQL);
+                    if (IPX > 0)
+                      userObject.putNumber("IPX", IPX);
+                    if (MPP > 0)
+                      userObject.putNumber("MPP" , MPP);
+                    if (COMMERCE > 0)
+                      userObject.putNumber("commerce", COMMERCE);
+                    if (NAS > 0)
+                      userObject.putNumber("NAS", NAS);
+                    if (FTPS > 0)
+                      userObject.putNumber("FTPS" ,FTPS);
+                    if (iSCSI > 0)
+                      userObject.putNumber("iSCSI", iSCSI);
+                    if (RRH > 0)
+                      userObject.putNumber("RRH", RRH);
+                    if (SILC > 0)
+                      userObject.putNumber("SILC" ,SILC);
+                    if (VATP > 0)
+                      userObject.putNumber("VATP", VATP);
+                    if (ACAP > 0)
+                      userObject.putNumber("ACAP", ACAP);
+                    if (RRP > 0)
+                      userObject.putNumber("RRP" ,RRP);
+                    userObject.putNumber("total", total);
+
+                    reply.putObject(Integer.toString(preIdx), userObject);
+
+                    userObject = new JsonObject();
+                    preIdx = idx;
+                    TCPMUX = 0;
+                    ECHO = 0;
+                    DISCARD = 0;
+                    DAYTIME = 0;
+                    QOTD = 0;
+                    CHARGEN = 0;
+                    FTP = 0;
+                    SSH = 0;
+                    TELNET = 0;
+                    PRIVATEMAILSYSTEM = 0;
+                    SMTP = 0;
+                    TIME = 0;
+                    TACACS = 0;
+                    DNS = 0;
+                    BOOTPORDHCP = 0;
+                    TFTP = 0;
+                    GOPHER = 0;
+                    FINGER = 0;
+                    HTTP = 0;
+                    KERBEROS = 0;
+                    POP2 = 0;
+                    POP3 = 0;
+                    IDENT = 0;
+                    NNTP = 0;
+                    NTP = 0;
+                    NETBIOS = 0;
+                    IMAP4 = 0;
+                    SNMP = 0;
+                    BGP = 0;
+                    IRC = 0;
+                    LDAP = 0;
+                    HTTPS = 0;
+                    MICROSOFT_DS = 0;
+                    SYSLOG = 0;
+                    LPD = 0;
+                    UUCP = 0;
+                    WHOIS = 0;
+                    NETRJS = 0;
+                    SQL = 0;
+                    IPX = 0;
+                    MPP = 0;
+                    COMMERCE = 0;
+                    NAS = 0;
+                    FTPS = 0;
+                    iSCSI = 0;
+                    RRH = 0;
+                    SILC = 0;
+                    VATP = 0;
+                    ACAP = 0;
+                    RRP = 0;
+                    total = 0;
+                  }
+                }
 
                 if (source_port.equals("80"))
                   HTTP = HTTP + 1;
@@ -961,108 +1141,214 @@ public class MysqlHandler {
                 total = total + 1;
               }
 
-              if (HTTP > 0)
-                reply.putNumber("HTTP", HTTP);
-              if (HTTPS > 0)
-                reply.putNumber("HTTPS", HTTPS);
-              if (TCPMUX > 0)
-                reply.putNumber("TCPMUX", TCPMUX);
-              if (ECHO > 0)
-                reply.putNumber("ECHO", ECHO);
-              if (DISCARD > 0 )
-                reply.putNumber("DISCARD", DISCARD);
-              if (DAYTIME > 0 )
-                reply.putNumber("DAYTIME", DAYTIME);
-              if (QOTD > 0)
-                reply.putNumber("QOTD", QOTD);
-              if (CHARGEN > 0)
-                reply.putNumber("CHARGEN", CHARGEN);
-              if (FTP > 0)
-                reply.putNumber("FTP", FTP);
-              if (SSH > 0)
-                reply.putNumber("SSH" ,SSH);
-              if (TELNET > 0)
-                reply.putNumber("Telnet", TELNET);
-              if (PRIVATEMAILSYSTEM > 0)
-                reply.putNumber("Private_Mail_System", PRIVATEMAILSYSTEM);
-              if (SMTP > 0)
-                reply.putNumber("SMTP", SMTP);
-              if (TIME > 0)
-                reply.putNumber("TIME", TIME);
-              if (TACACS > 0)
-                reply.putNumber("TACACS", TACACS);
-              if (DNS > 0)
-                reply.putNumber("DNS", DNS);
-              if (BOOTPORDHCP > 0)
-                reply.putNumber("BOOTPorDHCP", BOOTPORDHCP);
-              if (TFTP > 0)
-                reply.putNumber("TFTP", TFTP);
-              if (GOPHER > 0)
-                reply.putNumber("Gopher", GOPHER);
-              if (FINGER > 0)
-                reply.putNumber("Finger", FINGER);
-              if (KERBEROS > 0)
-                reply.putNumber("Kerberos", KERBEROS);
-              if (POP2 > 0)
-                reply.putNumber("POP2", POP2);
-              if (POP3 > 0)
-                reply.putNumber("POP3" ,POP3);
-              if (IDENT > 0)
-                reply.putNumber("ident", IDENT);
-              if (NNTP > 0)
-                reply.putNumber("NNTP", NNTP);
-              if (NTP > 0)
-                reply.putNumber("NTP", NTP);
-              if (NETBIOS > 0)
-                reply.putNumber("NetBIOS", NETBIOS);
-              if (IMAP4 > 0)
-                reply.putNumber("IMAP4", IMAP4);
-              if (SNMP > 0)
-                reply.putNumber("SNMP", SNMP);
-              if (BGP > 0)
-                reply.putNumber("BGP", BGP);
-              if (IRC > 0)
-                reply.putNumber("IRC", IRC);
-              if (LDAP > 0)
-                reply.putNumber("LDAP", LDAP);
-              if (MICROSOFT_DS > 0)
-                reply.putNumber("Microsoft-DS", MICROSOFT_DS);
-              if (SYSLOG > 0)
-                reply.putNumber("syslog", SYSLOG);
-              if (LPD > 0)
-                reply.putNumber("LPD", LPD);
-              if (UUCP > 0)
-                reply.putNumber("UUCP" ,UUCP);
-              if (WHOIS > 0)
-                reply.putNumber("WHOIS", WHOIS);
-              if (NETRJS > 0)
-                reply.putNumber("NETRJS", NETRJS);
-              if (SQL > 0)
-                reply.putNumber("SQL", SQL);
-              if (IPX > 0)
-                reply.putNumber("IPX", IPX);
-              if (MPP > 0)
-                reply.putNumber("MPP" , MPP);
-              if (COMMERCE > 0)
-                reply.putNumber("commerce", COMMERCE);
-              if (NAS > 0)
-                reply.putNumber("NAS", NAS);
-              if (FTPS > 0)
-                reply.putNumber("FTPS" ,FTPS);
-              if (iSCSI > 0)
-                reply.putNumber("iSCSI", iSCSI);
-              if (RRH > 0)
-                reply.putNumber("RRH", RRH);
-              if (SILC > 0)
-                reply.putNumber("SILC" ,SILC);
-              if (VATP > 0)
-                reply.putNumber("VATP", VATP);
-              if (ACAP > 0)
-                reply.putNumber("ACAP", ACAP);
-              if (RRP > 0)
-                reply.putNumber("RRP" ,RRP);
+              if (code.equals("traffic")) {
+                if (HTTP > 0)
+                  reply.putNumber("HTTP", HTTP);
+                if (HTTPS > 0)
+                  reply.putNumber("HTTPS", HTTPS);
+                if (TCPMUX > 0)
+                  reply.putNumber("TCPMUX", TCPMUX);
+                if (ECHO > 0)
+                  reply.putNumber("ECHO", ECHO);
+                if (DISCARD > 0 )
+                  reply.putNumber("DISCARD", DISCARD);
+                if (DAYTIME > 0 )
+                  reply.putNumber("DAYTIME", DAYTIME);
+                if (QOTD > 0)
+                  reply.putNumber("QOTD", QOTD);
+                if (CHARGEN > 0)
+                  reply.putNumber("CHARGEN", CHARGEN);
+                if (FTP > 0)
+                  reply.putNumber("FTP", FTP);
+                if (SSH > 0)
+                  reply.putNumber("SSH" ,SSH);
+                if (TELNET > 0)
+                  reply.putNumber("Telnet", TELNET);
+                if (PRIVATEMAILSYSTEM > 0)
+                  reply.putNumber("Private_Mail_System", PRIVATEMAILSYSTEM);
+                if (SMTP > 0)
+                  reply.putNumber("SMTP", SMTP);
+                if (TIME > 0)
+                  reply.putNumber("TIME", TIME);
+                if (TACACS > 0)
+                  reply.putNumber("TACACS", TACACS);
+                if (DNS > 0)
+                  reply.putNumber("DNS", DNS);
+                if (BOOTPORDHCP > 0)
+                  reply.putNumber("BOOTPorDHCP", BOOTPORDHCP);
+                if (TFTP > 0)
+                  reply.putNumber("TFTP", TFTP);
+                if (GOPHER > 0)
+                  reply.putNumber("Gopher", GOPHER);
+                if (FINGER > 0)
+                  reply.putNumber("Finger", FINGER);
+                if (KERBEROS > 0)
+                  reply.putNumber("Kerberos", KERBEROS);
+                if (POP2 > 0)
+                  reply.putNumber("POP2", POP2);
+                if (POP3 > 0)
+                  reply.putNumber("POP3" ,POP3);
+                if (IDENT > 0)
+                  reply.putNumber("ident", IDENT);
+                if (NNTP > 0)
+                  reply.putNumber("NNTP", NNTP);
+                if (NTP > 0)
+                  reply.putNumber("NTP", NTP);
+                if (NETBIOS > 0)
+                  reply.putNumber("NetBIOS", NETBIOS);
+                if (IMAP4 > 0)
+                  reply.putNumber("IMAP4", IMAP4);
+                if (SNMP > 0)
+                  reply.putNumber("SNMP", SNMP);
+                if (BGP > 0)
+                  reply.putNumber("BGP", BGP);
+                if (IRC > 0)
+                  reply.putNumber("IRC", IRC);
+                if (LDAP > 0)
+                  reply.putNumber("LDAP", LDAP);
+                if (MICROSOFT_DS > 0)
+                  reply.putNumber("Microsoft-DS", MICROSOFT_DS);
+                if (SYSLOG > 0)
+                  reply.putNumber("syslog", SYSLOG);
+                if (LPD > 0)
+                  reply.putNumber("LPD", LPD);
+                if (UUCP > 0)
+                  reply.putNumber("UUCP" ,UUCP);
+                if (WHOIS > 0)
+                  reply.putNumber("WHOIS", WHOIS);
+                if (NETRJS > 0)
+                  reply.putNumber("NETRJS", NETRJS);
+                if (SQL > 0)
+                  reply.putNumber("SQL", SQL);
+                if (IPX > 0)
+                  reply.putNumber("IPX", IPX);
+                if (MPP > 0)
+                  reply.putNumber("MPP" , MPP);
+                if (COMMERCE > 0)
+                  reply.putNumber("commerce", COMMERCE);
+                if (NAS > 0)
+                  reply.putNumber("NAS", NAS);
+                if (FTPS > 0)
+                  reply.putNumber("FTPS" ,FTPS);
+                if (iSCSI > 0)
+                  reply.putNumber("iSCSI", iSCSI);
+                if (RRH > 0)
+                  reply.putNumber("RRH", RRH);
+                if (SILC > 0)
+                  reply.putNumber("SILC" ,SILC);
+                if (VATP > 0)
+                  reply.putNumber("VATP", VATP);
+                if (ACAP > 0)
+                  reply.putNumber("ACAP", ACAP);
+                if (RRP > 0)
+                  reply.putNumber("RRP" ,RRP);
 
-              reply.putNumber("total", total);
+                reply.putNumber("total", total);
+              } else if (code.equals("user")) {
+                if (HTTP > 0)
+                  userObject.putNumber("HTTP", HTTP);
+                if (HTTPS > 0)
+                  userObject.putNumber("HTTPS", HTTPS);
+                if (TCPMUX > 0)
+                  userObject.putNumber("TCPMUX", TCPMUX);
+                if (ECHO > 0)
+                  userObject.putNumber("ECHO", ECHO);
+                if (DISCARD > 0 )
+                  userObject.putNumber("DISCARD", DISCARD);
+                if (DAYTIME > 0 )
+                  userObject.putNumber("DAYTIME", DAYTIME);
+                if (QOTD > 0)
+                  userObject.putNumber("QOTD", QOTD);
+                if (CHARGEN > 0)
+                  userObject.putNumber("CHARGEN", CHARGEN);
+                if (FTP > 0)
+                  userObject.putNumber("FTP", FTP);
+                if (SSH > 0)
+                  userObject.putNumber("SSH" ,SSH);
+                if (TELNET > 0)
+                  userObject.putNumber("Telnet", TELNET);
+                if (PRIVATEMAILSYSTEM > 0)
+                  userObject.putNumber("Private_Mail_System", PRIVATEMAILSYSTEM);
+                if (SMTP > 0)
+                  userObject.putNumber("SMTP", SMTP);
+                if (TIME > 0)
+                  userObject.putNumber("TIME", TIME);
+                if (TACACS > 0)
+                  userObject.putNumber("TACACS", TACACS);
+                if (DNS > 0)
+                  userObject.putNumber("DNS", DNS);
+                if (BOOTPORDHCP > 0)
+                  userObject.putNumber("BOOTPorDHCP", BOOTPORDHCP);
+                if (TFTP > 0)
+                  userObject.putNumber("TFTP", TFTP);
+                if (GOPHER > 0)
+                  userObject.putNumber("Gopher", GOPHER);
+                if (FINGER > 0)
+                  userObject.putNumber("Finger", FINGER);
+                if (KERBEROS > 0)
+                  userObject.putNumber("Kerberos", KERBEROS);
+                if (POP2 > 0)
+                  userObject.putNumber("POP2", POP2);
+                if (POP3 > 0)
+                  userObject.putNumber("POP3" ,POP3);
+                if (IDENT > 0)
+                  userObject.putNumber("ident", IDENT);
+                if (NNTP > 0)
+                  userObject.putNumber("NNTP", NNTP);
+                if (NTP > 0)
+                  userObject.putNumber("NTP", NTP);
+                if (NETBIOS > 0)
+                  userObject.putNumber("NetBIOS", NETBIOS);
+                if (IMAP4 > 0)
+                  userObject.putNumber("IMAP4", IMAP4);
+                if (SNMP > 0)
+                  userObject.putNumber("SNMP", SNMP);
+                if (BGP > 0)
+                  userObject.putNumber("BGP", BGP);
+                if (IRC > 0)
+                  userObject.putNumber("IRC", IRC);
+                if (LDAP > 0)
+                  userObject.putNumber("LDAP", LDAP);
+                if (MICROSOFT_DS > 0)
+                  userObject.putNumber("Microsoft-DS", MICROSOFT_DS);
+                if (SYSLOG > 0)
+                  userObject.putNumber("syslog", SYSLOG);
+                if (LPD > 0)
+                  userObject.putNumber("LPD", LPD);
+                if (UUCP > 0)
+                  userObject.putNumber("UUCP" ,UUCP);
+                if (WHOIS > 0)
+                  userObject.putNumber("WHOIS", WHOIS);
+                if (NETRJS > 0)
+                  userObject.putNumber("NETRJS", NETRJS);
+                if (SQL > 0)
+                  userObject.putNumber("SQL", SQL);
+                if (IPX > 0)
+                  userObject.putNumber("IPX", IPX);
+                if (MPP > 0)
+                  userObject.putNumber("MPP" , MPP);
+                if (COMMERCE > 0)
+                  userObject.putNumber("commerce", COMMERCE);
+                if (NAS > 0)
+                  userObject.putNumber("NAS", NAS);
+                if (FTPS > 0)
+                  userObject.putNumber("FTPS" ,FTPS);
+                if (iSCSI > 0)
+                  userObject.putNumber("iSCSI", iSCSI);
+                if (RRH > 0)
+                  userObject.putNumber("RRH", RRH);
+                if (SILC > 0)
+                  userObject.putNumber("SILC" ,SILC);
+                if (VATP > 0)
+                  userObject.putNumber("VATP", VATP);
+                if (ACAP > 0)
+                  userObject.putNumber("ACAP", ACAP);
+                if (RRP > 0)
+                  userObject.putNumber("RRP" ,RRP);
+
+                userObject.putNumber("total", total);
+                reply.putObject(Integer.toString(preIdx), userObject);
+              }
 
               reply.putNumber("code", 200);
               socket.emit(emitTo, reply);
