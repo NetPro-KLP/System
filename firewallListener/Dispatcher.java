@@ -63,7 +63,7 @@ public class Dispatcher {
 
                 byte[] firewallIpByte = new byte[4];
                 dataInputStream.read(firewallIpByte, 0, firewallIpByte.length);
-                String firewallIp = addrToString(firewallIpByte);
+                long firewallIp = addrToLong(firewallIpByte);
 
                 byte[] rowNumByte = new byte[4];
                 dataInputStream.read(rowNumByte, 0, rowNumByte.length);
@@ -80,7 +80,7 @@ public class Dispatcher {
                 } else if (code.equals("exp") || code.equals("alm")) {
                   byte[] saddrByte = new byte[4];
                   dataInputStream.read(saddrByte, 0, saddrByte.length);
-                  String saddr = addrToString(saddrByte);
+                  long saddr = addrToLong(saddrByte);
 
                   byte[] srcByte = new byte[2];
                   dataInputStream.read(srcByte, 0, srcByte.length);
@@ -88,7 +88,7 @@ public class Dispatcher {
 
                   byte[] daddrByte = new byte[4];
                   dataInputStream.read(daddrByte, 0, daddrByte.length);
-                  String daddr = addrToString(daddrByte);
+                  long daddr = addrToLong(daddrByte);
 
                   byte[] dstByte = new byte[2];
                   dataInputStream.read(dstByte, 0, dstByte.length);
@@ -196,14 +196,16 @@ public class Dispatcher {
              (arr[2] & 0xff) << 8 | (arr[3] & 0xff);
     }
 
-    private String addrToString (byte[] arr) {
-      int addrInt1 = arr[0] & 0xff;
-      int addrInt2 = arr[1] & 0xff;
-      int addrInt3 = arr[2] & 0xff;
-      int addrInt4 = arr[3] & 0xff;
+    private long addrToLong (byte[] arr) {
+      long addrLong1 = arr[0] & 0xff;
+      long addrLong2 = arr[1] & 0xff;
+      long addrLong3 = arr[2] & 0xff;
+      long addrLong4 = arr[3] & 0xff;
 
-      return Integer.toString(addrInt1) + "." + Integer.toString(addrInt2) +
-        "." + Integer.toString(addrInt3) + "." + Integer.toString(addrInt4);
+      long addrLong = (addrLong1 << 24) + (addrLong2 << 16) + (addrLong3 << 8) +
+        addrLong4;
+
+      return addrLong;
     }
 
     private String portToString (byte[] arr) {

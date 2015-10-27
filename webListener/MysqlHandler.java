@@ -369,7 +369,7 @@ public class MysqlHandler {
                   JsonObject trafficObject = null;
 
                   int idx = rs.getInt(1);
-                  String ip = rs.getString(2);
+                  long ip = rs.getLong(2);
                   String connectedAt = rs.getString(3);
                   int status = rs.getInt(4);
                   String starttime = rs.getString(5);
@@ -400,7 +400,7 @@ public class MysqlHandler {
                     if (percentage > 100)
                       percentage = 100;
 
-                    trafficObject = new JsonObject().putString("ip", ip);
+                    trafficObject = new JsonObject().putNumber("ip", ip);
                     trafficObject.putString("connectedAt", connectedAt);
                     trafficObject.putNumber("status", status);
                     trafficObject.putString("starttime", starttime);
