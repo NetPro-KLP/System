@@ -1102,6 +1102,16 @@ public class MysqlHandler {
                   + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
                   + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
                   + "ORDER BY p.endtime DESC";
+              } else if (code.equals("user")) {
+                outboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
+                  + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+                  + "JOIN users u ON u.ip = p.source_ip GROUP BY u.idx, p.endtime "
+                  + "ORDER BY u.idx, p.endtime DESC";
+
+                inboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
+                  + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY u.idx, p.endtime "
+                  + "ORDER BY u.idx, p.endtime DESC";
               }
 
               rs = st.executeQuery(inboundQuery);
@@ -1113,90 +1123,113 @@ public class MysqlHandler {
               double totalbytesEachTime = 0;
               int dangerEachTime = 0;
               int warnEachTime = 0;
+              int preIdx = -1;
               String preDate = null;
 
               JsonArray jsonArray = new JsonArray();
               JsonObject jsonGroup = new JsonObject();
+              JsonObject jsonUser = new JsonObject();
 
               while (rs.next()) {
+                JsonObject inObject = null;
+
+                int idx = 0;
+                double totalbytes = 0;
+                int warn = 0;
+                int danger = 0;
+                String starttime = null;
+                String endtime = null;
+
                 if (code.equals("traffic")) {
-                  JsonObject inObject = null;
+                  totalbytes = (double)rs.getFloat(1);
+                  warn = rs.getInt(2);
+                  danger = rs.getInt(3);
+                  starttime = rs.getString(4);
+                  endtime = rs.getString(5);
+                } else if (code.equals("user")) {
+                  idx = rs.getInt(1);
+                  totalbytes = (double)rs.getFloat(2);
+                  warn = rs.getInt(3);
+                  danger = rs.getInt(4);
+                  starttime = rs.getString(5);
+                  endtime = rs.getString(6);
+                }
 
-                  double totalbytes = (double)rs.getFloat(1);
-                  int warn = rs.getInt(2);
-                  int danger = rs.getInt(3);
-                  String starttime = rs.getString(4);
-                  String endtime = rs.getString(5);
+                starttime = starttime.substring(0,19);
+                endtime = endtime.substring(0,19);
 
-                  starttime = starttime.substring(0,19);
-                  endtime = endtime.substring(0,19);
+                String curtime = null;
+                String curdate = null;
 
-                  String curtime = null;
-                  String curdate = null;
+                if (unit.equals("hour")) {
+                  curtime = endtime.substring(11,13) + ":00:00";
+                  curdate = endtime.substring(0,11);
+                } else if (unit.equals("min")) {
+                  curtime = endtime.substring(14,16) + ":00";
+                  curdate = endtime.substring(0,14);
+                } else if (unit.equals("sec")) {
+                  curtime = endtime.substring(17,19);
+                  curdate = endtime.substring(0,17);
+                } else if (unit.equals("day")) {
+                  curtime = endtime.substring(8,10) + " 00:00:00";
+                  curdate = endtime.substring(0,8);
+                } else if (unit.equals("mon")) {
+                  curtime = endtime.substring(5,7) + "-01 00:00:00";
+                  curdate = endtime.substring(0,5);
+                } else if (unit.equals("year")) {
+                  curtime = endtime.substring(0,4) + "-01-01 00:00:00";
+                  curdate = "";
+                }
 
-                  if (unit.equals("hour")) {
-                    curtime = endtime.substring(11,13) + ":00:00";
-                    curdate = endtime.substring(0,11);
-                  } else if (unit.equals("min")) {
-                    curtime = endtime.substring(14,16) + ":00";
-                    curdate = endtime.substring(0,14);
-                  } else if (unit.equals("sec")) {
-                    curtime = endtime.substring(17,19);
-                    curdate = endtime.substring(0,17);
-                  } else if (unit.equals("day")) {
-                    curtime = endtime.substring(8,10) + " 00:00:00";
-                    curdate = endtime.substring(0,8);
-                  } else if (unit.equals("mon")) {
-                    curtime = endtime.substring(5,7) + "-01 00:00:00";
-                    curdate = endtime.substring(0,5);
-                  } else if (unit.equals("year")) {
-                    curtime = endtime.substring(0,4) + "-01-01 00:00:00";
-                    curdate = "";
-                  }
+                if (preTime.equals("init")) {
+                  preTime = curtime;
+                  preDate = curdate;
+                  preIdx = idx;
+                }
 
-                  if (preTime.equals("init")) {
-                    preTime = curtime;
-                    preDate = curdate;
-                  }
-
-                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    inObject = new JsonObject().putNumber("totalbytes",
-                        totalbytesEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(inObject);
-
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
-                    Date date = dateFormat.parse(preDate + preTime);
-                    long time = date.getTime() / 1000;
-
-                    jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                    jsonArray = new JsonArray();
-                    totalbytesEachTime = 0;
-                    dangerEachTime = 0;
-                    warnEachTime = 0;
-                    preTime = curtime;
-                    preDate = curdate;
-                  }
-
-                  inObject = new JsonObject().putString("stattime", starttime);
-                  inObject.putString("endtime", endtime);
-                  inObject.putNumber("danger", danger);
-                  inObject.putNumber("warn", warn);
-                  inObject.putNumber("eachbytes", totalbytes);
-                  totalbytesEachTime = totalbytesEachTime + totalbytes;
-                  dangerEachTime = dangerEachTime + danger;
-                  warnEachTime = warnEachTime + warn;
+                if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                  inObject = new JsonObject().putNumber("totalbytes",
+                      totalbytesEachTime);
                   jsonArray.addObject(inObject);
-                } // if: code.equals("traffic")
+
+                  inObject = new JsonObject().putNumber("totaldanger",
+                      dangerEachTime);
+                  jsonArray.addObject(inObject);
+
+                  inObject = new JsonObject().putNumber("totalwarn",
+                      warnEachTime);
+                  jsonArray.addObject(inObject);
+
+                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
+
+                  jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                  if (code.equals("user") && preIdx != idx) {
+                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                    jsonGroup = new JsonObject();
+                    preIdx = idx;
+                  }
+
+                  jsonArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
+                  preTime = curtime;
+                  preDate = curdate;
+                }
+
+                inObject = new JsonObject().putString("stattime", starttime);
+                inObject.putString("endtime", endtime);
+                inObject.putNumber("danger", danger);
+                inObject.putNumber("warn", warn);
+                inObject.putNumber("eachbytes", totalbytes);
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
+                jsonArray.addObject(inObject);
               }
 
               if (!preTime.equals("init")) {
@@ -1218,7 +1251,12 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
-                reply.putObject("inboundTraffic", jsonGroup);
+                if (code.equals("traffic"))
+                  reply.putObject("inboundTraffic", jsonGroup);
+                else if (code.equals("user")) {
+                  jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                  reply.putObject("inboundTraffic", jsonUser);
+                }
               }
 
               rs = st.executeQuery(outboundQuery);
@@ -1234,86 +1272,108 @@ public class MysqlHandler {
 
               jsonArray = new JsonArray();
               jsonGroup = new JsonObject();
+              jsonUser = new JsonObject();
 
               while (rs.next()) {
+                JsonObject outObject = null;
+
+                int idx = 0;
+                double totalbytes = 0;
+                int warn = 0;
+                int danger = 0;
+                String starttime = null;
+                String endtime = null;
+
                 if (code.equals("traffic")) {
-                  JsonObject inObject = null;
+                  totalbytes = (double)rs.getFloat(1);
+                  warn = rs.getInt(2);
+                  danger = rs.getInt(3);
+                  starttime = rs.getString(4);
+                  endtime = rs.getString(5);
+                } else if (code.equals("user")) {
+                  idx = rs.getInt(1);
+                  totalbytes = (double)rs.getFloat(2);
+                  warn = rs.getInt(3);
+                  danger = rs.getInt(4);
+                  starttime = rs.getString(5);
+                  endtime = rs.getString(6);
+                }
 
-                  double totalbytes = (double)rs.getFloat(1);
-                  int warn = rs.getInt(2);
-                  int danger = rs.getInt(3);
-                  String starttime = rs.getString(4);
-                  String endtime = rs.getString(5);
+                starttime = starttime.substring(0,19);
+                endtime = endtime.substring(0,19);
 
-                  starttime = starttime.substring(0,19);
-                  endtime = endtime.substring(0,19);
+                String curtime = null;
+                String curdate = null;
 
-                  String curtime = null;
-                  String curdate = null;
+                if (unit.equals("hour")) {
+                  curtime = endtime.substring(11,13) + ":00:00";
+                  curdate = endtime.substring(0,11);
+                } else if (unit.equals("min")) {
+                  curtime = endtime.substring(14,16) + ":00";
+                  curdate = endtime.substring(0,14);
+                } else if (unit.equals("sec")) {
+                  curtime = endtime.substring(17,19);
+                  curdate = endtime.substring(0,17);
+                } else if (unit.equals("day")) {
+                  curtime = endtime.substring(8,10) + " 00:00:00";
+                  curdate = endtime.substring(0,8);
+                } else if (unit.equals("mon")) {
+                  curtime = endtime.substring(5,7) + "-01 00:00:00";
+                  curdate = endtime.substring(0,5);
+                } else if (unit.equals("year")) {
+                  curtime = endtime.substring(0,4) + "-01-01 00:00:00";
+                  curdate = "";
+                }
 
-                  if (unit.equals("hour")) {
-                    curtime = endtime.substring(11,13) + ":00:00";
-                    curdate = endtime.substring(0,11);
-                  } else if (unit.equals("min")) {
-                    curtime = endtime.substring(14,16) + ":00";
-                    curdate = endtime.substring(0,14);
-                  } else if (unit.equals("sec")) {
-                    curtime = endtime.substring(17,19);
-                    curdate = endtime.substring(0,17);
-                  } else if (unit.equals("day")) {
-                    curtime = endtime.substring(8,10) + " 00:00:00";
-                    curdate = endtime.substring(0,8);
-                  } else if (unit.equals("mon")) {
-                    curtime = endtime.substring(5,7) + "-01 00:00:00";
-                    curdate = endtime.substring(0,5);
-                  } else if (unit.equals("year")) {
-                    curtime = endtime.substring(0,4) + "-01-01 00:00:00";
-                    curdate = "";
+                if (preTime.equals("init")) {
+                  preTime = curtime;
+                  preDate = curdate;
+                  preIdx = idx;
+                }
+
+                if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                  outObject = new JsonObject().putNumber("totalbytes",
+                      totalbytesEachTime);
+                  jsonArray.addObject(outObject);
+
+                  outObject = new JsonObject().putNumber("totaldanger",
+                      dangerEachTime);
+                  jsonArray.addObject(outObject);
+
+                  outObject = new JsonObject().putNumber("totalwarn",
+                      warnEachTime);
+                  jsonArray.addObject(outObject);
+
+                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
+
+                  jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                  if (code.equals("user") && preIdx != idx) {
+                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                    jsonGroup = new JsonObject();
+                    preIdx = idx;
                   }
 
-                  if (preTime.equals("init")) {
-                    preTime = curtime;
-                    preDate = curdate;
-                  }
+                  jsonArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
+                  preTime = curtime;
+                  preDate = curdate;
+                }
 
-                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    inObject = new JsonObject().putNumber("totalbytes",
-                        totalbytesEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(inObject);
-
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
-                    Date date = dateFormat.parse(preDate + preTime);
-                    long time = date.getTime() / 1000;
-
-                    jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                    jsonArray = new JsonArray();
-                    totalbytesEachTime = 0;
-                    dangerEachTime = 0;
-                    warnEachTime = 0;
-                    preTime = curtime;
-                    preDate = curdate;
-                  }
-
-                  inObject = new JsonObject().putString("stattime", starttime);
-                  inObject.putString("endtime", endtime);
-                  inObject.putNumber("danger", danger);
-                  inObject.putNumber("warn", warn);
-                  inObject.putNumber("eachbytes", totalbytes);
-                  totalbytesEachTime = totalbytesEachTime + totalbytes;
-                  dangerEachTime = dangerEachTime + danger;
-                  warnEachTime = warnEachTime + warn;
-                  jsonArray.addObject(inObject);
-                } // if: code.equals("traffic")
+                outObject = new JsonObject().putString("stattime", starttime);
+                outObject.putString("endtime", endtime);
+                outObject.putNumber("danger", danger);
+                outObject.putNumber("warn", warn);
+                outObject.putNumber("eachbytes", totalbytes);
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
+                jsonArray.addObject(outObject);
               }
 
               if (!preTime.equals("init")) {
@@ -1335,7 +1395,13 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
-                reply.putObject("outboundTraffic", jsonGroup);
+                
+                if (code.equals("traffic"))
+                  reply.putObject("outboundTraffic", jsonGroup);
+                else if (code.equals("user")) {
+                  jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                  reply.putObject("outboundTraffic", jsonUser);
+                }
               }
 
               reply.putNumber("code", 200);
