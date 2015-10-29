@@ -767,6 +767,143 @@ public class MysqlHandler {
       }
     }
 
+    public void barStatistics(String emitTo, String unit) {
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              java.sql.Statement st = getSt();
+              ResultSet rs = null;
+              JsonObject reply = new JsonObject();
+
+              String packetsQuery = null;
+              String backupQuery = null;
+
+              if (unit.equals("danger")) {
+                packetsQuery = "SELECT SUM(danger), endtime FROM packets WHERE 1";
+                backupQuery = "SELECT SUM(danger), endtime FROM backup_packets GROUP BY "
+                  + "endtime ORDER BY endtime DESC";
+              } else if (unit.equals("warn")) {
+                packetsQuery = "SELECT SUM(warn), endtime FROM packets WHERE 1";
+                backupQuery = "SELECT SUM(warn), endtime FROM backup_packets GROUP BY "
+                  + "endtime ORDER BY endtime DESC";
+              } else if (unit.equals("traffic")) {
+                packetsQuery = "SELECT SUM(totalbytes), endtime FROM packets WHERE 1";
+                backupQuery = "SELECT SUM(totalbytes), endtime FROM backup_packets GROUP BY "
+                  + "endtime ORDER BY endtime DESC";
+              } else if (unit.equals("dangerWarn")) {
+                packetsQuery = "SELECT SUM(danger), SUM(warn), endtime FROM packets WHERE 1";
+                backupQuery = "SELECT SUM(danger), SUM(warn), endtime FROM backup_packets GROUP BY "
+                  + "endtime ORDER BY endtime DESC";
+              }
+
+              rs = st.executeQuery(packetsQuery);
+
+              if (st.execute(packetsQuery))
+                rs = st.getResultSet();
+
+              while (rs.next()) {
+                int eachUnit = 0;
+                double traffic = 0;
+
+                if (unit.equals("traffic"))
+                  traffic = (double)rs.getFloat(1);
+                else if (unit.equals("dangerWarn"))
+                  eachUnit = rs.getInt(1) + rs.getInt(2);
+                else
+                  eachUnit = rs.getInt(1);
+
+                String endtime = null;
+
+                if (unit.equals("dangerWarn"))
+                  endtime = (rs.getString(3)).substring(0,10);
+                else
+                  endtime = (rs.getString(2)).substring(0,10);
+
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                Date date = dateFormat.parse(endtime);
+                long time = date.getTime() / 1000;
+
+                if (unit.equals("traffic"))
+                  reply.putNumber(Long.toString(time), traffic);
+                else
+                  reply.putNumber(Long.toString(time), eachUnit);
+              }
+
+              rs = st.executeQuery(backupQuery);
+
+              if (st.execute(backupQuery))
+                rs = st.getResultSet();
+
+              int i = -1;
+              int totalUnit = 0;
+              double totalTraffic = 0;
+              String day = null;
+
+              while (rs.next()) {
+                if (i == 6)
+                  break;
+
+                double traffic = 0;
+                int eachUnit = 0;
+
+                if (unit.equals("traffic"))
+                  traffic = (double)rs.getFloat(1);
+                else if (unit.equals("dangerWarn"))
+                  eachUnit = rs.getInt(1) + rs.getInt(2);
+                else
+                  eachUnit = rs.getInt(1);
+
+                String endtime = null;
+
+                if (unit.equals("dangerWarn"))
+                  endtime = (rs.getString(3)).substring(0,10);
+                else
+                  endtime = (rs.getString(2)).substring(0,10);
+                
+                if (i == -1) {
+                  day = endtime;
+                  i = 0;
+                }
+
+                if (!day.equals(endtime)) {
+                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                  Date date = dateFormat.parse(day);
+                  long time = date.getTime() / 1000;
+
+                  if (unit.equals("traffic"))
+                    reply.putNumber(Long.toString(time), totalTraffic);
+                  else
+                    reply.putNumber(Long.toString(time), totalUnit);
+
+                  day = endtime;
+                  totalUnit = 0;
+                  totalTraffic = 0;
+                  i = i + 1;
+                }
+
+                totalUnit = totalUnit + eachUnit;
+                totalTraffic = totalTraffic + traffic;
+              }
+
+              reply.putNumber("code", 200);
+              socket.emit(emitTo, reply);
+            } catch (SQLException sqex) {
+              System.out.println("SQLException: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+              resToWeb(emitTo, "400", "bar statistics: somethings were error");
+            } catch (ParseException e) {
+              e.printStackTrace();
+            }
+          }
+        };
+
+        thread.start();
+      } else {
+        resToWeb(emitTo, "400", "Database connection failed");
+      }
+    }
+
     public void protocolStatistics(String emitTo, String code) {
       if (this.isConnected) {
         Thread thread = new Thread() {
