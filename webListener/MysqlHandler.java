@@ -7,6 +7,7 @@ import java.lang.Math;
 import java.util.Date;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Calendar;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -485,6 +486,7 @@ public class MysqlHandler {
               JsonObject jsonUser = new JsonObject();
 
               int preIdx = -1;
+              int unitCnt = 0;
 
               while (rs.next()) {
                 JsonObject tcpObject = new JsonObject();
@@ -570,6 +572,7 @@ public class MysqlHandler {
                   }
 
                   jsonArray = new JsonArray();
+                  unitCnt = unitCnt + 1;
                   totalbytesEachTime = 0;
                   dangerEachTime = 0;
                   warnEachTime = 0;
@@ -582,7 +585,37 @@ public class MysqlHandler {
                 warnEachTime = warnEachTime + warn;
               }
 
+              unitCnt = unitCnt + 1;
+              String backupTcpQuery = null;
+              String backupUdpQuery = null;
+
               if (!preTime.equals("init")) {
+                if (unitCnt < 24) {
+                  if (code.equals("traffic")) {
+                    backupTcpQuery = "SELECT p.starttime, p.endtime, "
+                      + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM "
+                      + "backup_packets p"
+                      + " WHERE p.tcpudp = 0 GROUP BY p.endtime ORDER BY p.endtime DESC";
+
+                    backupUdpQuery = "SELECT p.starttime, p.endtime, "
+                      + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM "
+                      + "backup_packets p"
+                      + " WHERE p.tcpudp = 1 GROUP BY p.endtime ORDER BY p.endtime DESC";
+                  } else if (code.equals("user")) {
+                    backupTcpQuery = "SELECT u.idx, p.starttime, p.endtime, "
+                      + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM backup_packets"
+                      + " p JOIN users u ON (u.ip = p.source_ip OR u.ip = p.destination_ip)"
+                      + " AND (p.tcpudp = 0) GROUP BY u.idx, p.endtime ORDER BY "
+                      + "u.idx, p.endtime DESC";
+
+                    backupUdpQuery = "SELECT u.idx, p.starttime, p.endtime, "
+                      + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM backup_packets"
+                      + " p JOIN users u ON (u.ip = p.source_ip OR u.ip = p.destination_ip)"
+                      + " AND (p.tcpudp = 1) GROUP BY u.idx, p.endtime ORDER BY "
+                      + "u.idx, p.endtime DESC";
+                  }
+                }
+
                 JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
                     totalbytesEachTime);
                 jsonArray.addObject(insertObject);
@@ -601,12 +634,14 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
+
                 if (code.equals("traffic"))
                   reply.putObject("tcpTraffic", jsonGroup);
                 else if (code.equals("user")) {
                   jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                  reply. putObject("tcpTraffic", jsonUser);
+                  reply.putObject("tcpTraffic", jsonUser);
                 }
+
               }
 
               rs = st.executeQuery(barUdpQuery);
@@ -748,6 +783,310 @@ public class MysqlHandler {
                 }
               }
 
+              if (unitCnt < 24) {
+                int preUnitCnt = unitCnt;
+
+                rs = st.executeQuery(backupTcpQuery);
+
+                if(st.execute(backupTcpQuery))
+                  rs = st.getResultSet();
+
+                preTime = "init";
+                totalbytesEachTime = 0;
+                dangerEachTime = 0;
+                warnEachTime = 0;
+                preDate = null;
+
+                jsonArray = new JsonArray();
+                jsonGroup = new JsonObject();
+                jsonUser = new JsonObject();
+
+                while (rs.next() && unitCnt < 24) {
+                  JsonObject tcpObject = new JsonObject();
+
+                  int idx = 0;
+                  String starttime = null;
+                  String endtime = null;
+                  double totalbytes = 0;
+                  int danger = 0;
+                  int warn = 0;
+
+                  if (code.equals("traffic")) {
+                    starttime = rs.getString(1);
+                    endtime = rs.getString(2);
+                    totalbytes = (double)rs.getFloat(3);
+                    danger = rs.getInt(4);
+                    warn = rs.getInt(5);
+                  } else if (code.equals("user")) {
+                    idx = rs.getInt(1);
+                    starttime = rs.getString(2);
+                    endtime = rs.getString(3);
+                    totalbytes = (double)rs.getFloat(4);
+                    danger = rs.getInt(5);
+                    warn = rs.getInt(6);
+                  }
+
+                  starttime = starttime.substring(0,19);
+                  endtime = endtime.substring(0,19);
+
+                  String curtime = null;
+                  String curdate = null;
+
+                  if (unit.equals("hour")) {
+                    curtime = endtime.substring(11,13) + ":00:00";
+                    curdate = endtime.substring(0,11);
+                  } else if (unit.equals("min")) {
+                    curtime = endtime.substring(14,16) + ":00";
+                    curdate = endtime.substring(0,14);
+                  } else if (unit.equals("sec")) {
+                    curtime = endtime.substring(17,19);
+                    curdate = endtime.substring(0,17);
+                  } else if (unit.equals("day")) {
+                    curtime = endtime.substring(8,10) + " 00:00:00";
+                    curdate = endtime.substring(0,8);
+                  } else if (unit.equals("mon")) {
+                    curtime = endtime.substring(5,7) + "-01 00:00:00";
+                    curdate = endtime.substring(0,5);
+                  } else if (unit.equals("year")) {
+                    curtime = endtime.substring(0,4) + "-01-01 00:00:00";
+                    curdate = "";
+                  }
+
+                  if (preTime.equals("init")) {
+                    preTime = curtime;
+                    preDate = curdate;
+                    preIdx = idx;
+                  }
+
+                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                    tcpObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachTime);
+                    jsonArray.addObject(tcpObject);
+
+                    tcpObject = new JsonObject().putNumber("totaldanger",
+                        dangerEachTime);
+                    jsonArray.addObject(tcpObject);
+
+                    tcpObject = new JsonObject().putNumber("totalwarn",
+                        warnEachTime);
+                    jsonArray.addObject(tcpObject);
+
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                        + "HH:mm:ss");
+                    Date date = dateFormat.parse(preDate + preTime);
+                    long time = date.getTime() / 1000;
+
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                    if (code.equals("user") && preIdx != idx) {
+                      jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                      jsonGroup = new JsonObject();
+                      preIdx = idx;
+                    }
+
+                    jsonArray = new JsonArray();
+                    unitCnt = unitCnt + 1;
+                    totalbytesEachTime = 0;
+                    dangerEachTime = 0;
+                    warnEachTime = 0;
+                    preTime = curtime;
+                    preDate = curdate;
+                  }
+
+                  totalbytesEachTime = totalbytesEachTime + totalbytes;
+                  dangerEachTime = dangerEachTime + danger;
+                  warnEachTime = warnEachTime + warn;
+                }
+
+                if (!preTime.equals("init") && unitCnt <= 24) {
+                  if (unitCnt != 24) {
+                    JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
+                        totalbytesEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    insertObject = new JsonObject().putNumber("totaldanger",
+                        dangerEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    insertObject = new JsonObject().putNumber("totalwarn",
+                        warnEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                         + "HH:mm:ss");
+                    Date date = dateFormat.parse(preDate + preTime);
+                    long time = date.getTime() / 1000;
+
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
+                  }
+
+                  if (code.equals("traffic")) {
+                    JsonObject preGroup = reply.getObject("tcpTraffic");
+                    preGroup.mergeIn(jsonGroup);
+                    reply.removeField("tcpTraffic");
+                    reply.putObject("tcpTraffic", preGroup);
+                  }
+                  else if (code.equals("user")) {
+                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                    JsonObject preUser = reply.getObject("tcpTraffic");
+                    preUser.mergeIn(jsonUser);
+                    reply.removeField("tcpTraffic");
+                    reply.putObject("tcpTraffic", preUser);
+                  }
+                }
+
+                unitCnt = preUnitCnt;
+
+                rs = st.executeQuery(backupUdpQuery);
+
+                if(st.execute(backupUdpQuery))
+                  rs = st.getResultSet();
+
+                preTime = "init";
+                totalbytesEachTime = 0;
+                dangerEachTime = 0;
+                warnEachTime = 0;
+                preDate = null;
+
+                jsonArray = new JsonArray();
+                jsonGroup = new JsonObject();
+                jsonUser = new JsonObject();
+
+                while (rs.next() && unitCnt < 24) {
+                  JsonObject udpObject = new JsonObject();
+
+                  int idx = 0;
+                  String starttime = null;
+                  String endtime = null;
+                  double totalbytes = 0;
+                  int danger = 0;
+                  int warn = 0;
+
+                  if (code.equals("traffic")) {
+                    starttime = rs.getString(1);
+                    endtime = rs.getString(2);
+                    totalbytes = (double)rs.getFloat(3);
+                    danger = rs.getInt(4);
+                    warn = rs.getInt(5);
+                  } else if (code.equals("user")) {
+                    idx = rs.getInt(1);
+                    starttime = rs.getString(2);
+                    endtime = rs.getString(3);
+                    totalbytes = (double)rs.getFloat(4);
+                    danger = rs.getInt(5);
+                    warn = rs.getInt(6);
+                  }
+
+                  starttime = starttime.substring(0,19);
+                  endtime = endtime.substring(0,19);
+
+                  String curtime = null;
+                  String curdate = null;
+
+                  if (unit.equals("hour")) {
+                    curtime = endtime.substring(11,13) + ":00:00";
+                    curdate = endtime.substring(0,11);
+                  } else if (unit.equals("min")) {
+                    curtime = endtime.substring(14,16) + ":00";
+                    curdate = endtime.substring(0,14);
+                  } else if (unit.equals("sec")) {
+                    curtime = endtime.substring(17,19);
+                    curdate = endtime.substring(0,17);
+                  } else if (unit.equals("day")) {
+                    curtime = endtime.substring(8,10) + " 00:00:00";
+                    curdate = endtime.substring(0,8);
+                  } else if (unit.equals("mon")) {
+                    curtime = endtime.substring(5,7) + "-01 00:00:00";
+                    curdate = endtime.substring(0,5);
+                  } else if (unit.equals("year")) {
+                    curtime = endtime.substring(0,4) + "-01-01 00:00:00";
+                    curdate = "";
+                  }
+
+                  if (preTime.equals("init")) {
+                    preTime = curtime;
+                    preDate = curdate;
+                    preIdx = idx;
+                  }
+
+                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                    udpObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachTime);
+                    jsonArray.addObject(udpObject);
+
+                    udpObject = new JsonObject().putNumber("totaldanger",
+                        dangerEachTime);
+                    jsonArray.addObject(udpObject);
+
+                    udpObject = new JsonObject().putNumber("totalwarn",
+                        warnEachTime);
+                    jsonArray.addObject(udpObject);
+
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                        + "HH:mm:ss");
+                    Date date = dateFormat.parse(preDate + preTime);
+                    long time = date.getTime() / 1000;
+
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                    if (code.equals("user") && preIdx != idx) {
+                      jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                      jsonGroup = new JsonObject();
+                      preIdx = idx;
+                    }
+
+                    jsonArray = new JsonArray();
+                    unitCnt = unitCnt + 1;
+                    totalbytesEachTime = 0;
+                    dangerEachTime = 0;
+                    warnEachTime = 0;
+                    preTime = curtime;
+                    preDate = curdate;
+                  }
+
+                  totalbytesEachTime = totalbytesEachTime + totalbytes;
+                  dangerEachTime = dangerEachTime + danger;
+                  warnEachTime = warnEachTime + warn;
+                }
+
+                if (!preTime.equals("init") && unitCnt <= 24) {
+                  if (unitCnt != 24) {
+                    JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
+                        totalbytesEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    insertObject = new JsonObject().putNumber("totaldanger",
+                        dangerEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    insertObject = new JsonObject().putNumber("totalwarn",
+                        warnEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                        + "HH:mm:ss");
+                    Date date = dateFormat.parse(preDate + preTime);
+                    long time = date.getTime() / 1000;
+
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
+                  }
+
+                  if (code.equals("traffic")) {
+                    JsonObject preGroup = reply.getObject("udpTraffic");
+                    preGroup.mergeIn(jsonGroup);
+                    reply.removeField("udpTraffic");
+                    reply.putObject("udpTraffic", preGroup);
+                  }
+                  else if (code.equals("user")) {
+                    JsonObject preUser = reply.getObject("udpTraffic");
+                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
+                    preUser.mergeIn(jsonUser);
+                    reply.removeField("udpTraffic");
+                    reply.putObject("udpTraffic", preUser);
+                  }
+                }
+              }
+
               reply.putNumber("code", 200);
               socket.emit(emitTo, reply);
 
@@ -791,7 +1130,8 @@ public class MysqlHandler {
                 packetsQuery = "SELECT SUM(totalbytes), endtime FROM packets WHERE 1";
                 backupQuery = "SELECT SUM(totalbytes), endtime FROM backup_packets GROUP BY "
                   + "endtime ORDER BY endtime DESC";
-              } else if (unit.equals("dangerWarn")) {
+              } else if (unit.equals("dangerWarn") ||
+                  unit.equals("weekDangerWarn")) {
                 packetsQuery = "SELECT SUM(danger), SUM(warn), endtime FROM packets WHERE 1";
                 backupQuery = "SELECT SUM(danger), SUM(warn), endtime FROM backup_packets GROUP BY "
                   + "endtime ORDER BY endtime DESC";
@@ -802,30 +1142,48 @@ public class MysqlHandler {
               if (st.execute(packetsQuery))
                 rs = st.getResultSet();
 
+              int i = -1;
+              int weekStart = 0;
+
               while (rs.next()) {
                 int eachUnit = 0;
                 double traffic = 0;
 
                 if (unit.equals("traffic"))
                   traffic = (double)rs.getFloat(1);
-                else if (unit.equals("dangerWarn"))
+                else if (unit.equals("dangerWarn") ||
+                    unit.equals("weekDangerWarn"))
                   eachUnit = rs.getInt(1) + rs.getInt(2);
                 else
                   eachUnit = rs.getInt(1);
 
                 String endtime = null;
 
-                if (unit.equals("dangerWarn"))
+                if (unit.equals("dangerWarn") || unit.equals("weekDangerWarn"))
                   endtime = (rs.getString(3)).substring(0,10);
                 else
                   endtime = (rs.getString(2)).substring(0,10);
 
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
                 Date date = dateFormat.parse(endtime);
                 long time = date.getTime() / 1000;
 
+                if (unit.equals("weekDangerWarn")) {
+                  Calendar calendar = Calendar.getInstance();
+                  calendar.setTime(date);
+
+                  weekStart = calendar.get(Calendar.DAY_OF_WEEK);
+                  if (weekStart != 1) {
+                    break;
+                  }
+                  i = i + 1;
+                }
+
                 if (unit.equals("traffic"))
                   reply.putNumber(Long.toString(time), traffic);
+                else if (unit.equals("weekDangerWarn"))
+                  reply.putNumber("sun", eachUnit);
                 else
                   reply.putNumber(Long.toString(time), eachUnit);
               }
@@ -835,10 +1193,10 @@ public class MysqlHandler {
               if (st.execute(backupQuery))
                 rs = st.getResultSet();
 
-              int i = -1;
               int totalUnit = 0;
               double totalTraffic = 0;
               String day = null;
+              boolean flag = true;
 
               while (rs.next()) {
                 if (i == 6)
@@ -849,21 +1207,53 @@ public class MysqlHandler {
 
                 if (unit.equals("traffic"))
                   traffic = (double)rs.getFloat(1);
-                else if (unit.equals("dangerWarn"))
+                else if (unit.equals("dangerWarn") ||
+                    unit.equals("weekDangerWarn"))
                   eachUnit = rs.getInt(1) + rs.getInt(2);
                 else
                   eachUnit = rs.getInt(1);
 
                 String endtime = null;
 
-                if (unit.equals("dangerWarn"))
+                if (unit.equals("dangerWarn") || unit.equals("weekDangerWarn"))
                   endtime = (rs.getString(3)).substring(0,10);
                 else
                   endtime = (rs.getString(2)).substring(0,10);
                 
-                if (i == -1) {
+                if (i == -1 && !unit.equals("weekDangerWarn")) {
                   day = endtime;
                   i = 0;
+                } else if (i == 0 && weekStart == 1 &&
+                    unit.equals("weekDangerWarn") && flag) {
+                  day = endtime;
+                  flag = !flag;
+                } else if (i == -1 && weekStart != 1 &&
+                    unit.equals("weekDangerWarn") && flag) {
+                  weekStart = weekStart - 1;
+                  flag = !flag;
+                  if (weekStart == 1)
+                    day = endtime;
+                  else {
+                    while(rs.next()) {
+
+                      eachUnit = rs.getInt(1) + rs.getInt(2);
+                      endtime = (rs.getString(3)).substring(0,10);
+                      day = endtime;
+
+                      DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                      Date date = dateFormat.parse(endtime);
+
+                      Calendar calendar = Calendar.getInstance();
+                      calendar.setTime(date);
+
+                      weekStart = calendar.get(Calendar.DAY_OF_WEEK);
+
+                      if (weekStart == 1) {
+                        break;
+                      }
+
+                    }
+                  }
                 }
 
                 if (!day.equals(endtime)) {
@@ -873,6 +1263,26 @@ public class MysqlHandler {
 
                   if (unit.equals("traffic"))
                     reply.putNumber(Long.toString(time), totalTraffic);
+                  else if (unit.equals("weekDangerWarn")) {
+                    String dayOfWeek = null;
+                    if (i == -1)
+                      dayOfWeek = "sun";
+                    else if (i == 0)
+                      dayOfWeek = "sat";
+                    else if (i == 1)
+                      dayOfWeek = "fri";
+                    else if (i == 2)
+                      dayOfWeek = "thu";
+                    else if (i == 3)
+                      dayOfWeek = "wed";
+                    else if (i == 4)
+                      dayOfWeek = "tue";
+                    else if (i == 5)
+                      dayOfWeek = "mon";
+
+                    reply.putNumber(dayOfWeek, totalUnit);
+                    reply.putString(Long.toString(time), dayOfWeek);
+                  }
                   else
                     reply.putNumber(Long.toString(time), totalUnit);
 
