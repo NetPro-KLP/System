@@ -14,12 +14,16 @@ public class QueueListenedInfo {
         this.firewallIp = Long.toString(firewallIp);
         this.code = code;
         this.packet = packet;
+
+        System.out.println("QueueListendinfo : " + packet);
     }
 
     public QueueListenedInfo(Socket socket, long firewallIp, String code) {
       this.socket = socket;
       this.firewallIp = Long.toString(firewallIp);
       this.code = code;
+
+      System.out.println("QueueListenedInfo : " + code);
     }
 
     public Socket getSocket() {

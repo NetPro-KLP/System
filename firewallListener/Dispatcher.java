@@ -60,6 +60,7 @@ public class Dispatcher {
             try {
                 Socket socket = serverSocket.accept();
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+                System.out.println("FUCKU");
 
                 byte[] firewallIpByte = new byte[4];
                 dataInputStream.read(firewallIpByte, 0, firewallIpByte.length);
