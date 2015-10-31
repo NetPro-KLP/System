@@ -337,6 +337,9 @@ public class MysqlHandler {
               + " OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime"
               + " ORDER BY u.idx, p.endtime DESC";
 
+            String realtimeQuery = "SELECT endtime, SUM(totalbytes) FROM "
+              + "packets GROUP BY endtime ORDER BY endtime DESC";
+
             try {
               while(isRealtime) {
 
@@ -351,7 +354,6 @@ public class MysqlHandler {
 
                 int cnt = 0;
                 int preIdx = -1;
-                //int divisor = 0;
 
                 while(rs.next()) {
                   JsonObject trafficObject = null;
@@ -372,7 +374,6 @@ public class MysqlHandler {
 
                   if (preIdx == -1) {
                     preIdx = idx;
-                    //divisor = traffic / 6;
                   }
 
                   if (preIdx != idx) {
@@ -393,14 +394,39 @@ public class MysqlHandler {
                     trafficObject.putString("endtime", endtime);
                     trafficObject.putNumber("danger", danger);
                     trafficObject.putNumber("warn", warn);
-                    trafficObject.putNumber("trafficPercentage", traffic/* /
-                        divisor*/);
+                    trafficObject.putNumber("trafficPercentage", traffic);
                     trafficArray.addObject(trafficObject);
                   }
                 }
 
                 reply.putArray(Integer.toString(preIdx), trafficArray);
 
+                rs = st.executeQuery(realtimeQuery);
+
+                if(st.execute(realtimeQuery))
+                  rs = st.getResultSet();
+
+                cnt = 0;
+                trafficArray = new JsonArray();
+
+                while (rs.next() && cnt < 20) {
+                  JsonObject trafficObject = new JsonObject();
+
+                  String endtime = rs.getString(1);
+                  endtime = endtime.substring(0,19);
+                  double totalbytes = (double)rs.getFloat(2);
+
+                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
+                  Date date = dateFormat.parse(endtime);
+                  long time = date.getTime() / 1000;
+
+                  trafficObject.putNumber(Long.toString(time), totalbytes);
+                  trafficArray.addObject(trafficObject);
+                  cnt = cnt + 1;
+                }
+
+                reply.putArray("statistics", trafficArray);
                 reply.putNumber("code", 200);
                 socket.emit(emitTo, reply);
 
@@ -414,6 +440,8 @@ public class MysqlHandler {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
               resToWeb(emitTo, "400", "realtimeOn: somethings were error");
+            } catch (ParseException e) {
+              e.printStackTrace();
             }
           } // Thread: run()
         }; // Thread thread = new Thread() {
@@ -1388,6 +1416,8 @@ public class MysqlHandler {
 
               String outboundQuery = null;
               String inboundQuery = null;
+              String backupOutboundQuery = null;
+              String backupInboundQuery = null;
 
               if (code.equals("traffic")) {
                 outboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
@@ -1399,6 +1429,15 @@ public class MysqlHandler {
                   + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
                   + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
                   + "ORDER BY p.endtime DESC";
+                backupOutboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
+                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+                  + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
+                  + "ORDER BY p.endtime DESC";
+
+                backupInboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
+                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
+                  + "ORDER BY p.endtime DESC";
               } else if (code.equals("user")) {
                 outboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
                   + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
@@ -1407,6 +1446,15 @@ public class MysqlHandler {
 
                 inboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
                   + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY u.idx, p.endtime "
+                  + "ORDER BY u.idx, p.endtime DESC";
+                backupOutboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
+                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+                  + "JOIN users u ON u.ip = p.source_ip GROUP BY u.idx, p.endtime "
+                  + "ORDER BY u.idx, p.endtime DESC";
+
+                backupInboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
+                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
                   + "JOIN users u ON u.ip = p.destination_ip GROUP BY u.idx, p.endtime "
                   + "ORDER BY u.idx, p.endtime DESC";
               }
@@ -1467,7 +1515,7 @@ public class MysqlHandler {
                 } else if (unit.equals("sec")) {
                   curtime = endtime.substring(17,19);
                   curdate = endtime.substring(0,17);
-                } else if (unit.equals("day")) {
+                } else if (unit.equals("day") || unit.equals("week")) {
                   curtime = endtime.substring(8,10) + " 00:00:00";
                   curdate = endtime.substring(0,8);
                 } else if (unit.equals("mon")) {
@@ -1542,8 +1590,9 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
-                if (code.equals("traffic"))
+                if (code.equals("traffic")) {
                   reply.putObject("inboundTraffic", jsonGroup);
+                }
                 else if (code.equals("user")) {
                   jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
                   reply.putObject("inboundTraffic", jsonUser);

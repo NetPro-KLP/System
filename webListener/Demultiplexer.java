@@ -182,6 +182,13 @@ public class Demultiplexer implements Runnable {
             }
         });
 
+        socket.on("inoutbound traffic week", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+              String emitTo = "inoutbound traffic week res";
+              mysqlHandler.inoutBound(emitTo, "traffic", "week");
+            }
+        });
+
         socket.on("inoutbound user sec", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
               String emitTo = "inoutbound user sec res";
