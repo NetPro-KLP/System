@@ -408,21 +408,27 @@ public class MysqlHandler {
 
                 cnt = 0;
                 trafficArray = new JsonArray();
+                double first = 0;
 
-                while (rs.next() && cnt < 20) {
+                while (rs.next() && cnt < 260) {
                   JsonObject trafficObject = new JsonObject();
 
                   String endtime = rs.getString(1);
                   endtime = endtime.substring(0,19);
                   double totalbytes = (double)rs.getFloat(2);
+                  double[] data = new double[2];
+
+                  if (first == 0)
+                    first = totalbytes;
 
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(endtime);
                   long time = date.getTime() / 1000;
 
-                  trafficObject.putNumber(Long.toString(time), totalbytes);
-                  trafficArray.addObject(trafficObject);
+                  data[0] = (double)cnt;
+                  data[1] = totalbytes/first * 30;
+                  trafficArray.add(data);
                   cnt = cnt + 1;
                 }
 
@@ -1142,6 +1148,7 @@ public class MysqlHandler {
               java.sql.Statement st = getSt();
               ResultSet rs = null;
               JsonObject reply = new JsonObject();
+              JsonArray jsonArray = new JsonArray();
 
               String packetsQuery = null;
               String backupQuery = null;
@@ -1212,8 +1219,12 @@ public class MysqlHandler {
                   reply.putNumber(Long.toString(time), traffic);
                 else if (unit.equals("weekDangerWarn"))
                   reply.putNumber("sun", eachUnit);
-                else
-                  reply.putNumber(Long.toString(time), eachUnit);
+                else {
+                  Long[] data = new Long[2];
+                  data[0] = time;
+                  data[1] = (long)eachUnit;
+                  jsonArray.add(data);
+                }
               }
 
               rs = st.executeQuery(backupQuery);
@@ -1311,8 +1322,12 @@ public class MysqlHandler {
                     reply.putNumber(dayOfWeek, totalUnit);
                     reply.putString(Long.toString(time), dayOfWeek);
                   }
-                  else
-                    reply.putNumber(Long.toString(time), totalUnit);
+                  else {
+                    Long[] data = new Long[2];
+                    data[0] = time;
+                    data[1] = (long)totalUnit;
+                    jsonArray.add(data);
+                  }
 
                   day = endtime;
                   totalUnit = 0;
@@ -1323,6 +1338,9 @@ public class MysqlHandler {
                 totalUnit = totalUnit + eachUnit;
                 totalTraffic = totalTraffic + traffic;
               }
+
+              if (unit.equals("dangerWarn"))
+                reply.putArray("dangerWarn", jsonArray);
 
               reply.putNumber("code", 200);
               socket.emit(emitTo, reply);
@@ -1354,8 +1372,9 @@ public class MysqlHandler {
               String query = null;
 
               if (code.equals("traffic")) {
-                query = "SELECT COUNT(p.source_port), pr.name FROM packets p JOIN protocol pr "
-                  + "ON p.source_port = pr.port GROUP BY "
+                query = "SELECT COUNT(p.destination_port), pr.name FROM packets p "
+                  + "JOIN protocol pr JOIN users u "
+                  + "ON (p.destination_port = pr.port) AND (u.ip = p.source_ip) GROUP BY "
                   + "pr.name ORDER BY COUNT(p.source_port) DESC";
               } else if (code.equals("user")) {
                 query = "SELECT u.idx, p.source_port FROM packets p JOIN"
