@@ -331,7 +331,7 @@ public class MysqlHandler {
           public void run() {
             java.sql.Statement st = getSt();
 
-            String trafficQuery = "SELECT u.idx, u.ip, u.connectedAt, u.status, p.starttime, p.endtime"
+            String trafficQuery = "SELECT u.idx, u.ip, u.status, p.endtime"
               + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
               + " FROM users u JOIN packets p ON u.ip = p.source_ip"
               + " OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime"
@@ -354,23 +354,25 @@ public class MysqlHandler {
 
                 int cnt = 0;
                 int preIdx = -1;
+                double totalbytesEachUser = 0;
+                int totalWarnEachUser = 0;
+                int totalDangerEachUser = 0;
 
                 while(rs.next()) {
                   JsonObject trafficObject = null;
 
                   int idx = rs.getInt(1);
                   long ip = rs.getLong(2);
-                  String connectedAt = rs.getString(3);
-                  int status = rs.getInt(4);
-                  String starttime = rs.getString(5);
-                  String endtime = rs.getString(6);
-                  int traffic = rs.getInt(7);
-                  int danger = rs.getInt(8);
-                  int warn = rs.getInt(9);
+                  int status = rs.getInt(3);
+                  String endtime = rs.getString(4);
+                  int traffic = rs.getInt(5);
+                  int danger = rs.getInt(6);
+                  int warn = rs.getInt(7);
 
-                  connectedAt = connectedAt.substring(0,19);
-                  starttime = starttime.substring(0,19);
                   endtime = endtime.substring(0,19);
+                  totalbytesEachUser = totalbytesEachUser + traffic;
+                  totalWarnEachUser = totalWarnEachUser + warn;
+                  totalDangerEachUser = totalDangerEachUser + danger;
 
                   if (preIdx == -1) {
                     preIdx = idx;
@@ -379,8 +381,12 @@ public class MysqlHandler {
                   if (preIdx != idx) {
                     cnt = 1;
                     reply.putArray(Integer.toString(preIdx), trafficArray);
+
                     trafficArray = new JsonArray();
                     preIdx = idx;
+                    totalbytesEachUser = 0;
+                    totalWarnEachUser = 0;
+                    totalDangerEachUser = 0;
                   }
                   else
                     cnt++;
@@ -388,13 +394,18 @@ public class MysqlHandler {
                   if (cnt <= 20) {
 
                     trafficObject = new JsonObject().putNumber("ip", ip);
-                    trafficObject.putString("connectedAt", connectedAt);
                     trafficObject.putNumber("status", status);
-                    trafficObject.putString("starttime", starttime);
                     trafficObject.putString("endtime", endtime);
                     trafficObject.putNumber("danger", danger);
                     trafficObject.putNumber("warn", warn);
                     trafficObject.putNumber("trafficPercentage", traffic);
+                    if (cnt == 20) {
+                      trafficObject.putNumber("totalbytes",
+                          totalbytesEachUser);
+                      trafficObject.putNumber("totalwarn", totalWarnEachUser);
+                      trafficObject.putNumber("totaldanger",
+                          totalDangerEachUser);
+                    }
                     trafficArray.addObject(trafficObject);
                   }
                 }
@@ -1424,7 +1435,7 @@ public class MysqlHandler {
       }
     }
 
-    public void inoutBound(String emitTo, String code, String unit) {
+    public void inoutBound(String emitTo, String unit) {
       if (this.isConnected) {
         Thread thread = new Thread() {
           public void run() {
@@ -1438,7 +1449,7 @@ public class MysqlHandler {
               String backupOutboundQuery = null;
               String backupInboundQuery = null;
 
-              if (code.equals("traffic")) {
+              if (unit.equals("week")) {
                 outboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
                   + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
                   + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
@@ -1457,25 +1468,6 @@ public class MysqlHandler {
                   + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
                   + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
                   + "ORDER BY p.endtime DESC";
-              } else if (code.equals("user")) {
-                outboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
-                  + "JOIN users u ON u.ip = p.source_ip GROUP BY u.idx, p.endtime "
-                  + "ORDER BY u.idx, p.endtime DESC";
-
-                inboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
-                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY u.idx, p.endtime "
-                  + "ORDER BY u.idx, p.endtime DESC";
-                backupOutboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
-                  + "JOIN users u ON u.ip = p.source_ip GROUP BY u.idx, p.endtime "
-                  + "ORDER BY u.idx, p.endtime DESC";
-
-                backupInboundQuery = "SELECT u.idx, SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
-                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY u.idx, p.endtime "
-                  + "ORDER BY u.idx, p.endtime DESC";
               }
 
               rs = st.executeQuery(inboundQuery);
@@ -1493,8 +1485,14 @@ public class MysqlHandler {
               String preDate = null;
 
               JsonArray jsonArray = new JsonArray();
-              JsonObject jsonGroup = new JsonObject();
-              JsonObject jsonUser = new JsonObject();
+
+              JsonObject inboundObject = new JsonObject();
+              JsonObject outboundObject = new JsonObject();
+              JsonObject dateObject = new JsonObject();
+
+              String[] weekDate = new String[7];
+              double[] inbound = new double[7];
+              double[] outbound = new double[7];
 
               while (rs.next()) {
                 JsonObject inObject = new JsonObject();
@@ -1506,19 +1504,12 @@ public class MysqlHandler {
                 String starttime = null;
                 String endtime = null;
 
-                if (code.equals("traffic")) {
+                if (unit.equals("week")) {
                   totalbytes = (double)rs.getFloat(1);
                   warn = rs.getInt(2);
                   danger = rs.getInt(3);
                   starttime = rs.getString(4);
                   endtime = rs.getString(5);
-                } else if (code.equals("user")) {
-                  idx = rs.getInt(1);
-                  totalbytes = (double)rs.getFloat(2);
-                  warn = rs.getInt(3);
-                  danger = rs.getInt(4);
-                  starttime = rs.getString(5);
-                  endtime = rs.getString(6);
                 }
 
                 starttime = starttime.substring(0,19);
@@ -1534,9 +1525,6 @@ public class MysqlHandler {
                   Calendar calendar = Calendar.getInstance();
                   calendar.setTime(date);
                   weekStart = calendar.get(Calendar.DAY_OF_WEEK);
-
-                  if (weekStart != 1)
-                    break;
 
                   i = i + 1;
                 }
@@ -1568,30 +1556,10 @@ public class MysqlHandler {
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                  inObject = new JsonObject().putNumber("totalbytes",
-                      totalbytesEachTime);
-                  jsonArray.addObject(inObject);
-
-                  inObject = new JsonObject().putNumber("totaldanger",
-                      dangerEachTime);
-                  jsonArray.addObject(inObject);
-
-                  inObject = new JsonObject().putNumber("totalwarn",
-                      warnEachTime);
-                  jsonArray.addObject(inObject);
-
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
-
-                  jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                  if (code.equals("user") && preIdx != idx) {
-                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                    jsonGroup = new JsonObject();
-                    preIdx = idx;
-                  }
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
@@ -1607,39 +1575,33 @@ public class MysqlHandler {
               }
 
               if (!preTime.equals("init")) {
-                JsonObject insertObject = new
-                  JsonObject().putNumber("totalbytes", totalbytesEachTime);
-                jsonArray.addObject(insertObject);
-
-                insertObject = new JsonObject().putNumber("totaldanger",
-                    dangerEachTime);
-                jsonArray.addObject(insertObject);
-
-                insertObject = new JsonObject().putNumber("totalwarn",
-                    warnEachTime);
-                jsonArray.addObject(insertObject);
-
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                     + "HH:mm:ss");
                 Date date = dateFormat.parse(preDate + preTime);
-                long time = date.getTime() / 1000;
 
-                if (unit.equals("week") && weekStart == 1) {
-                  jsonGroup.putArray("sun", jsonArray);
-                  jsonGroup.putString(Long.toString(time), "sun");
+                if (unit.equals("week")) {
+                  if (weekStart == 1) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  } else if (weekStart == 2) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  }
+                  else if (weekStart == 3) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  }
+                  else if (weekStart == 4) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  }
+                  else if (weekStart == 5) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  }
+                  else if (weekStart == 6) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  }
+                  else if (weekStart == 7) {
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  }
                 }
-                else
-                  jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                if (code.equals("traffic") && !unit.equals("week")) {
-                  reply.putObject("inboundTraffic", jsonGroup);
-                } else if (unit.equals("week") && weekStart == 1) {
-                  reply.putObject("inboundTraffic", jsonGroup);
-                }
-                else if (code.equals("user")) {
-                  jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                  reply.putObject("inboundTraffic", jsonUser);
-                }
+                inbound[i-1] = totalbytesEachTime / 1000000;
               }
 
               rs = st.executeQuery(outboundQuery);
@@ -1654,8 +1616,6 @@ public class MysqlHandler {
               preDate = null;
 
               jsonArray = new JsonArray();
-              jsonGroup = new JsonObject();
-              jsonUser = new JsonObject();
 
               while (rs.next()) {
                 JsonObject outObject = new JsonObject();
@@ -1667,19 +1627,12 @@ public class MysqlHandler {
                 String starttime = null;
                 String endtime = null;
 
-                if (code.equals("traffic")) {
+                if (unit.equals("week")) {
                   totalbytes = (double)rs.getFloat(1);
                   warn = rs.getInt(2);
                   danger = rs.getInt(3);
                   starttime = rs.getString(4);
                   endtime = rs.getString(5);
-                } else if (code.equals("user")) {
-                  idx = rs.getInt(1);
-                  totalbytes = (double)rs.getFloat(2);
-                  warn = rs.getInt(3);
-                  danger = rs.getInt(4);
-                  starttime = rs.getString(5);
-                  endtime = rs.getString(6);
                 }
 
                 starttime = starttime.substring(0,19);
@@ -1687,9 +1640,6 @@ public class MysqlHandler {
 
                 String curtime = null;
                 String curdate = null;
-
-                if (unit.equals("week") && weekStart != 1)
-                  break;
 
                 if (unit.equals("hour")) {
                   curtime = endtime.substring(11,13) + ":00:00";
@@ -1718,30 +1668,10 @@ public class MysqlHandler {
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                  outObject = new JsonObject().putNumber("totalbytes",
-                      -totalbytesEachTime);
-                  jsonArray.addObject(outObject);
-
-                  outObject = new JsonObject().putNumber("totaldanger",
-                      -dangerEachTime);
-                  jsonArray.addObject(outObject);
-
-                  outObject = new JsonObject().putNumber("totalwarn",
-                      -warnEachTime);
-                  jsonArray.addObject(outObject);
-
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
-
-                  jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                  if (code.equals("user") && preIdx != idx) {
-                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                    jsonGroup = new JsonObject();
-                    preIdx = idx;
-                  }
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
@@ -1757,38 +1687,13 @@ public class MysqlHandler {
               }
 
               if (!preTime.equals("init")) {
-                JsonObject insertObject = new
-                  JsonObject().putNumber("totalbytes", -totalbytesEachTime);
-                jsonArray.addObject(insertObject);
-
-                insertObject = new JsonObject().putNumber("totaldanger",
-                    -dangerEachTime);
-                jsonArray.addObject(insertObject);
-
-                insertObject = new JsonObject().putNumber("totalwarn",
-                    -warnEachTime);
-                jsonArray.addObject(insertObject);
-
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd " +
                     "HH:mm:ss");
                 Date date = dateFormat.parse(preDate + preTime);
                 long time = date.getTime() / 1000;
 
-                if (unit.equals("week") && weekStart == 1) {
-                  jsonGroup.putArray("sun", jsonArray);
-                  jsonGroup.putString(Long.toString(time), "sun");
-                }
-                else
-                  jsonGroup.putArray(Long.toString(time), jsonArray);
-                
-                if (code.equals("traffic") && !unit.equals("week"))
-                  reply.putObject("outboundTraffic", jsonGroup);
-                else if (unit.equals("week") && weekStart == 1)
-                  reply.putObject("outboundTraffic", jsonGroup);
-                else if (code.equals("user")) {
-                  jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                  reply.putObject("outboundTraffic", jsonUser);
-                }
+                if (unit.equals("week"))
+                  outbound[i-1] = -totalbytesEachTime / 1000000;
               }
 
               if (unit.equals("week")) {
@@ -1806,13 +1711,7 @@ public class MysqlHandler {
                 preIdx = -1;
                 preDate = null;
 
-                jsonArray = new JsonArray();
-                jsonGroup = new JsonObject();
-                jsonUser = new JsonObject();
-
                 while (rs.next() && i < 7) {
-                  JsonObject inObject = new JsonObject();
-
                   int idx = 0;
                   double totalbytes = 0;
                   int warn = 0;
@@ -1820,19 +1719,12 @@ public class MysqlHandler {
                   String starttime = null;
                   String endtime = null;
 
-                  if (code.equals("traffic")) {
+                  if (unit.equals("week")) {
                     totalbytes = (double)rs.getFloat(1);
                     warn = rs.getInt(2);
                     danger = rs.getInt(3);
                     starttime = rs.getString(4);
                     endtime = rs.getString(5);
-                  } else if (code.equals("user")) {
-                    idx = rs.getInt(1);
-                    totalbytes = (double)rs.getFloat(2);
-                    warn = rs.getInt(3);
-                    danger = rs.getInt(4);
-                    starttime = rs.getString(5);
-                    endtime = rs.getString(6);
                   }
 
                   starttime = starttime.substring(0,19);
@@ -1843,44 +1735,6 @@ public class MysqlHandler {
                   curtime = endtime.substring(8,10) + " 00:00:00";
                   curdate = endtime.substring(0,8);
 
-                  if (weekStart != 1) {
-                    if (weekStart != 2) {
-                      while (rs.next()) {
-                        if (code.equals("traffic")) {
-                          totalbytes = (double)rs.getFloat(1);
-                          warn = rs.getInt(2);
-                          danger = rs.getInt(3);
-                          starttime = rs.getString(4);
-                          endtime = rs.getString(5);
-                        } else if (code.equals("user")) {
-                          idx = rs.getInt(1);
-                          totalbytes = (double)rs.getFloat(2);
-                          warn = rs.getInt(3);
-                          danger = rs.getInt(4);
-                          starttime = rs.getString(5);
-                          endtime = rs.getString(6);
-                        }
-
-                        starttime = starttime.substring(0,19);
-                        endtime = endtime.substring(0,19);
-
-                        curtime = endtime.substring(8,10) + " 00:00:00";
-                        curdate = endtime.substring(0,8);
-
-                        DateFormat dateFormat = new
-                          SimpleDateFormat("yyyy-MM-dd");
-                        Date date = dateFormat.parse(curdate + curtime);
-
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.setTime(date);
-
-                        weekStart = calendar.get(Calendar.DAY_OF_WEEK);
-                        if (weekStart == 1)
-                          break;
-                      }
-                    }
-                  }
-
                   if (preTime.equals("init")) {
                     preTime = curtime;
                     preDate = curdate;
@@ -1888,17 +1742,7 @@ public class MysqlHandler {
                   }
 
                   if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    inObject = new JsonObject().putNumber("totalbytes",
-                        totalbytesEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(inObject);
+                    inbound[i] = totalbytesEachTime / 1000000;
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -1912,28 +1756,19 @@ public class MysqlHandler {
                     String stringDayOfWeek = null;
 
                     if (dayOfWeek == 1)
-                      stringDayOfWeek = "sun";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 2)
-                      stringDayOfWeek = "mon";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 3)
-                      stringDayOfWeek = "tue";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 4)
-                      stringDayOfWeek = "wed";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 5)
-                      stringDayOfWeek = "thu";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 6)
-                      stringDayOfWeek = "fri";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 7)
-                      stringDayOfWeek = "sat";
-
-                    jsonGroup.putArray(stringDayOfWeek, jsonArray);
-                    jsonGroup.putString(Long.toString(time), stringDayOfWeek);
-
-                    if (code.equals("user") && preIdx != idx) {
-                      jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                      jsonGroup = new JsonObject();
-                      preIdx = idx;
-                    }
+                      weekDate[i] = preDate + preTime.substring(0,2);
 
                     jsonArray = new JsonArray();
                     totalbytesEachTime = 0;
@@ -1952,16 +1787,7 @@ public class MysqlHandler {
                 if (!preTime.equals("init")) {
                   JsonObject insertObject = new JsonObject();
                   if (i < 7) {
-                    insertObject.putNumber("totalbytes", totalbytesEachTime);
-                    jsonArray.addObject(insertObject);
-
-                    insertObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(insertObject);
-
-                    insertObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(insertObject);
+                    inbound[i] = totalbytesEachTime / 1000000;
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -1975,34 +1801,19 @@ public class MysqlHandler {
                     String stringDayOfWeek = null;
 
                     if (dayOfWeek == 1)
-                      stringDayOfWeek = "sun";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 2)
-                      stringDayOfWeek = "mon";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 3)
-                      stringDayOfWeek = "tue";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 4)
-                      stringDayOfWeek = "wed";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 5)
-                      stringDayOfWeek = "thu";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 6)
-                      stringDayOfWeek = "fri";
+                      weekDate[i] = preDate + preTime.substring(0,2);
                     else if (dayOfWeek == 7)
-                      stringDayOfWeek = "sat";
-
-                    jsonGroup.putArray(stringDayOfWeek, jsonArray);
-                    jsonGroup.putString(Long.toString(time), stringDayOfWeek);
-                  }
-                  if (code.equals("traffic")) {
-                    if (preI == 1) {
-                      JsonObject preObject = reply.getObject("inboundTraffic");
-                      jsonGroup.mergeIn(preObject);
-                      reply.removeField("inboundTraffic");
-                    }
-                    reply.putObject("inboundTraffic", jsonGroup);
-                  }
-                  else if (code.equals("user")) {
-                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                    reply.putObject("inboundTraffic", jsonUser);
+                      weekDate[i] = preDate + preTime.substring(0,2);
                   }
                 }
 
@@ -2021,8 +1832,6 @@ public class MysqlHandler {
                 preDate = null;
 
                 jsonArray = new JsonArray();
-                jsonGroup = new JsonObject();
-                jsonUser = new JsonObject();
 
                 while (rs.next() && i < 7) {
                   JsonObject inObject = new JsonObject();
@@ -2034,19 +1843,12 @@ public class MysqlHandler {
                   String starttime = null;
                   String endtime = null;
 
-                  if (code.equals("traffic")) {
+                  if (unit.equals("week")) {
                     totalbytes = (double)rs.getFloat(1);
                     warn = rs.getInt(2);
                     danger = rs.getInt(3);
                     starttime = rs.getString(4);
                     endtime = rs.getString(5);
-                  } else if (code.equals("user")) {
-                    idx = rs.getInt(1);
-                    totalbytes = (double)rs.getFloat(2);
-                    warn = rs.getInt(3);
-                    danger = rs.getInt(4);
-                    starttime = rs.getString(5);
-                    endtime = rs.getString(6);
                   }
 
                   starttime = starttime.substring(0,19);
@@ -2057,44 +1859,6 @@ public class MysqlHandler {
                   curtime = endtime.substring(8,10) + " 00:00:00";
                   curdate = endtime.substring(0,8);
 
-                  if (weekStart != 1) {
-                    if (weekStart != 2) {
-                      while (rs.next()) {
-                        if (code.equals("traffic")) {
-                          totalbytes = (double)rs.getFloat(1);
-                          warn = rs.getInt(2);
-                          danger = rs.getInt(3);
-                          starttime = rs.getString(4);
-                          endtime = rs.getString(5);
-                        } else if (code.equals("user")) {
-                          idx = rs.getInt(1);
-                          totalbytes = (double)rs.getFloat(2);
-                          warn = rs.getInt(3);
-                          danger = rs.getInt(4);
-                          starttime = rs.getString(5);
-                          endtime = rs.getString(6);
-                        }
-
-                        starttime = starttime.substring(0,19);
-                        endtime = endtime.substring(0,19);
-
-                        curtime = endtime.substring(8,10) + " 00:00:00";
-                        curdate = endtime.substring(0,8);
-
-                        DateFormat dateFormat = new
-                          SimpleDateFormat("yyyy-MM-dd");
-                        Date date = dateFormat.parse(curdate + curtime);
-
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.setTime(date);
-
-                        weekStart = calendar.get(Calendar.DAY_OF_WEEK);
-                        if (weekStart == 1)
-                          break;
-                      }
-                    }
-                  }
-
                   if (preTime.equals("init")) {
                     preTime = curtime;
                     preDate = curdate;
@@ -2102,17 +1866,7 @@ public class MysqlHandler {
                   }
 
                   if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    inObject = new JsonObject().putNumber("totalbytes",
-                        totalbytesEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(inObject);
-
-                    inObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(inObject);
+                    outbound[i] = -totalbytesEachTime / 1000000;
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -2124,30 +1878,6 @@ public class MysqlHandler {
 
                     int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
                     String stringDayOfWeek = null;
-
-                    if (dayOfWeek == 1)
-                      stringDayOfWeek = "sun";
-                    else if (dayOfWeek == 2)
-                      stringDayOfWeek = "mon";
-                    else if (dayOfWeek == 3)
-                      stringDayOfWeek = "tue";
-                    else if (dayOfWeek == 4)
-                      stringDayOfWeek = "wed";
-                    else if (dayOfWeek == 5)
-                      stringDayOfWeek = "thu";
-                    else if (dayOfWeek == 6)
-                      stringDayOfWeek = "fri";
-                    else if (dayOfWeek == 7)
-                      stringDayOfWeek = "sat";
-
-                    jsonGroup.putArray(stringDayOfWeek, jsonArray);
-                    jsonGroup.putString(Long.toString(time), stringDayOfWeek);
-
-                    if (code.equals("user") && preIdx != idx) {
-                      jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                      jsonGroup = new JsonObject();
-                      preIdx = idx;
-                    }
 
                     jsonArray = new JsonArray();
                     totalbytesEachTime = 0;
@@ -2166,16 +1896,7 @@ public class MysqlHandler {
                 if (!preTime.equals("init")) {
                   JsonObject insertObject = new JsonObject();
                   if (i < 7) {
-                    insertObject.putNumber("totalbytes", totalbytesEachTime);
-                    jsonArray.addObject(insertObject);
-
-                    insertObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(insertObject);
-
-                    insertObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(insertObject);
+                    outbound[i] = -totalbytesEachTime / 1000000;
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -2188,38 +1909,21 @@ public class MysqlHandler {
                     int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
                     String stringDayOfWeek = null;
 
-                    if (dayOfWeek == 1)
-                      stringDayOfWeek = "sun";
-                    else if (dayOfWeek == 2)
-                      stringDayOfWeek = "mon";
-                    else if (dayOfWeek == 3)
-                      stringDayOfWeek = "tue";
-                    else if (dayOfWeek == 4)
-                      stringDayOfWeek = "wed";
-                    else if (dayOfWeek == 5)
-                      stringDayOfWeek = "thu";
-                    else if (dayOfWeek == 6)
-                      stringDayOfWeek = "fri";
-                    else if (dayOfWeek == 7)
-                      stringDayOfWeek = "sat";
-
-                    jsonGroup.putArray(stringDayOfWeek, jsonArray);
-                    jsonGroup.putString(Long.toString(time), stringDayOfWeek);
-                  }
-                  if (code.equals("traffic")) {
-                    if (preI == 1) {
-                      JsonObject preObject = reply.getObject("outboundTraffic");
-                      jsonGroup.mergeIn(preObject);
-                      reply.removeField("outboundTraffic");
-                    }
-                    reply.putObject("outboundTraffic", jsonGroup);
-                  }
-                  else if (code.equals("user")) {
-                    jsonUser.putObject(Integer.toString(preIdx), jsonGroup);
-                    reply.putObject("outboundTraffic", jsonUser);
                   }
                 }
               }
+
+              jsonArray = new JsonArray();
+              jsonArray.add(weekDate);
+              reply.putArray("weekDate", jsonArray);
+
+              jsonArray = new JsonArray();
+              jsonArray.add(inbound);
+              reply.putArray("inbound", jsonArray);
+
+              jsonArray = new JsonArray();
+              jsonArray.add(outbound);
+              reply.putArray("outbound", jsonArray);
 
               reply.putNumber("code", 200);
               socket.emit(emitTo, reply);

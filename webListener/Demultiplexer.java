@@ -140,94 +140,10 @@ public class Demultiplexer implements Runnable {
             }
         });
 
-        socket.on("inoutbound traffic sec", new Handler<JsonObject>() {
+        socket.on("inoutbound week", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic sec res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "sec");
-            }
-        });
-
-        socket.on("inoutbound traffic min", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic min res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "min");
-            }
-        });
-
-        socket.on("inoutbound traffic hour", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic hour res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "hour");
-            }
-        });
-
-        socket.on("inoutbound traffic day", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic day res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "day");
-            }
-        });
-
-        socket.on("inoutbound traffic mon", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic mon res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "mon");
-            }
-        });
-
-        socket.on("inoutbound traffic year", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic year res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "year");
-            }
-        });
-
-        socket.on("inoutbound traffic week", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound traffic week res";
-              mysqlHandler.inoutBound(emitTo, "traffic", "week");
-            }
-        });
-
-        socket.on("inoutbound user sec", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound user sec res";
-              mysqlHandler.inoutBound(emitTo, "user", "sec");
-            }
-        });
-
-        socket.on("inoutbound user min", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound user min res";
-              mysqlHandler.inoutBound(emitTo, "user", "min");
-            }
-        });
-
-        socket.on("inoutbound user hour", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound user hour res";
-              mysqlHandler.inoutBound(emitTo, "user", "hour");
-            }
-        });
-
-        socket.on("inoutbound user day", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound user day res";
-              mysqlHandler.inoutBound(emitTo, "user", "day");
-            }
-        });
-
-        socket.on("inoutbound user mon", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound user mon res";
-              mysqlHandler.inoutBound(emitTo, "user", "mon");
-            }
-        });
-
-        socket.on("inoutbound user year", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "inoutbound user year res";
-              mysqlHandler.inoutBound(emitTo, "user", "year");
+              String emitTo = "inoutbound week res";
+              mysqlHandler.inoutBound(emitTo, "week");
             }
         });
 
