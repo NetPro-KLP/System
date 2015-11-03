@@ -1817,9 +1817,9 @@ public class MysqlHandler {
                   }
                 }
 
-                rs = st.executeQuery(backupInboundQuery);
+                rs = st.executeQuery(backupOutboundQuery);
 
-                if(st.execute(backupInboundQuery))
+                if(st.execute(backupOutboundQuery))
                   rs = st.getResultSet();
 
                 weekStart = preWeekStart;
