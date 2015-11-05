@@ -1585,7 +1585,7 @@ public class MysqlHandler {
                     weekDate[i-1] = preDate + preTime.substring(0,2);
                   }
                 }
-                inbound[i-1] = totalbytesEachTime / 1000000;
+                inbound[i-1] = totalbytesEachTime / (1024*1024);
               }
 
               rs = st.executeQuery(outboundQuery);
@@ -1677,7 +1677,7 @@ public class MysqlHandler {
                 long time = date.getTime() / 1000;
 
                 if (unit.equals("week"))
-                  outbound[i-1] = -totalbytesEachTime / 1000000;
+                  outbound[i-1] = -totalbytesEachTime / (1024*1024);
               }
 
               if (unit.equals("week")) {
@@ -1726,7 +1726,7 @@ public class MysqlHandler {
                   }
 
                   if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    inbound[i] = totalbytesEachTime / 1000000;
+                    inbound[i] = totalbytesEachTime / (1024*1024);
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -1771,7 +1771,7 @@ public class MysqlHandler {
                 if (!preTime.equals("init")) {
                   JsonObject insertObject = new JsonObject();
                   if (i < 7) {
-                    inbound[i] = totalbytesEachTime / 1000000;
+                    inbound[i] = totalbytesEachTime / (1024*1024);
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -1850,7 +1850,7 @@ public class MysqlHandler {
                   }
 
                   if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    outbound[i] = -totalbytesEachTime / 1000000;
+                    outbound[i] = -totalbytesEachTime / (1024*1024);
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -1880,7 +1880,7 @@ public class MysqlHandler {
                 if (!preTime.equals("init")) {
                   JsonObject insertObject = new JsonObject();
                   if (i < 7) {
-                    outbound[i] = -totalbytesEachTime / 1000000;
+                    outbound[i] = -totalbytesEachTime / (1024*1024);
 
                     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");

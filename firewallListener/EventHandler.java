@@ -10,6 +10,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.MalformedURLException;
 
+import java.text.SimpleDateFormat;
+
 import java.io.OutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -19,6 +21,7 @@ import java.nio.ByteBuffer;
 
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Date;
 
 public class EventHandler {
 
@@ -115,6 +118,95 @@ public class EventHandler {
                 }
               }
             } catch (SQLException sqex) {
+              System.out.println("SQLExeption: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+            }
+          }
+        };
+
+        thread.start();
+      } else {
+      }
+    }
+
+    public void checkPacketTable() {
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              java.sql.Statement st = firewallConn.createStatement();
+              ResultSet rs = null;
+
+              SimpleDateFormat simpleDateFormat = null;
+              Date date = null;
+              String currentDate = null;
+
+              String query = "SELECT source_ip, source_port, destination_ip, "
+                + "destination_port, tcpudp, packet_count, totalbytes, starttime, "
+                + "endtime, danger, warn FROM packets ORDER BY endtime ASC";
+
+              while(isConnected) {
+                rs = st.executeQuery(query);
+
+                if(st.execute(query))
+                  rs = st.getResultSet();
+
+                while (rs.next()) {
+                  String endtime = rs.getString(9);
+                  endtime = endtime.substring(0,10);
+
+                  simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                  date = new Date();
+                  currentDate = simpleDateFormat.format(date);
+
+                  if (endtime.equals(currentDate))
+                    break;
+                  else {
+                    long source_ip = rs.getLong(1);
+                    String source_port = rs.getString(2);
+                    long destination_ip = rs.getLong(3);
+                    String destination_port = rs.getString(4);
+                    int tcpudp = rs.getInt(5);
+                    int packet_count = rs.getInt(6);
+                    int totalbytes = rs.getInt(7);
+                    String starttime = rs.getString(8);
+                    int danger = rs.getInt(10);
+                    int warn = rs.getInt(11);
+
+                    String deleteQuery = "DELETE FROM packets WHERE source_ip = '"
+                      + source_ip + "', source_port = '" + source_port + "', des"
+                      + "tination_ip = '" + destination_ip + "', destination_port"
+                      + " = '" + destination_port + "', tcpudp = '" + tcpudp
+                      + "', packet_count = '" + packet_count + "', totalbytes = "
+                      + "'" + totalbytes + "', starttime = '" + starttime + "'"
+                      + ", endtime = '" + endtime + "', danger = '" + danger
+                      + "', warn = '" + warn + "'";
+
+                    java.sql.Statement updateSt = firewallConn.createStatement();
+                    updateSt.executeUpdate(deleteQuery);
+
+                    String insertQuery = "INSERT INTO `backup_packets`(`source_i"
+                      + "p`, `source_port`, `destination_ip`, `destination_port`"
+                      + ", `tcpudp`, `packet_count`, `totalbytes`, `starttime`, "
+                      + "`endtime`, `danger`, `warn`) VALUES(" + source_ip + ", "
+                      + "'" + source_port + "', '" + destination_ip + "', '"
+                      + destination_port + "', '" + tcpudp + "', '"
+                      + packet_count + "', '" + totalbytes + "', '" + starttime
+                      + "', '" + endtime + "', '" + danger + "', '" + warn + "'"
+                      + ")";
+
+                    updateSt.executeUpdate(insertQuery);
+                  }
+                }
+
+                try {
+                  Thread.sleep(2000);
+                } catch(InterruptedException e) {
+                  e.printStackTrace();
+                }
+              }
+
+            } catch(SQLException sqex) {
               System.out.println("SQLExeption: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
             }

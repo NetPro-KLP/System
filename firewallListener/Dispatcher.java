@@ -33,6 +33,7 @@ public class Dispatcher {
             "klpsoma123");
 
         eventHandler.checkGeoipBlacklist();
+        eventHandler.checkPacketTable();
 
         System.out.println("Firewall QueueListener ThreadPool Size: " + Integer.toString(queueNumThreads));
 
