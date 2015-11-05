@@ -17,6 +17,9 @@ import java.io.InputStream;
 
 import java.nio.ByteBuffer;
 
+import java.util.Queue;
+import java.util.LinkedList;
+
 public class EventHandler {
 
     private Connection firewallConn = null;
@@ -40,6 +43,86 @@ public class EventHandler {
             e.printStackTrace();
           }
         }
+      }
+    }
+
+    public void checkGeoipBlacklist() {
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              java.sql.Statement st = firewallConn.createStatement();
+              ResultSet rs = null;
+              Queue<String> blacklistQueue = new LinkedList<String>();
+              Queue<String> blacklistCurQueue = null;
+              Queue<String> blacklistCopyQueue = null;
+              Queue<String> blacklistCurCopyQueue = null;
+
+              String query = "SELECT country_code FROM GeoIP_Blacklist ORDER BY "
+                + "country_code DESC";
+
+              rs = st.executeQuery(query);
+
+              if(st.execute(query))
+                rs = st.getResultSet();
+
+              while(rs.next()) {
+                blacklistQueue.offer(rs.getString(1));
+              }
+
+              while (isConnected) {
+                /*Socket firewallSocket = new Socket("172.16.101.12", 30001);
+                OutputStream outputStream = firewallSocket.getOutputStream(); */
+                blacklistCurQueue = new LinkedList<String>();
+
+                query = "SELECT country_code FROM GeoIP_Blacklist ORDER BY "
+                  + "country_code DESC";
+
+                rs = st.executeQuery(query);
+
+                if(st.execute(query))
+                  rs = st.getResultSet();
+
+                while(rs.next()) {
+                  blacklistCurQueue.offer(rs.getString(1));
+                }
+
+                blacklistCopyQueue = new LinkedList<String>(blacklistQueue);
+                blacklistCurCopyQueue = new
+                  LinkedList<String>(blacklistCurQueue);
+
+                boolean isSame = true;
+                while (true) {
+                  String existData = blacklistCopyQueue.poll();
+                  if (existData == null)
+                    break;
+
+                  if (!existData.equals(blacklistCurCopyQueue.poll())) {
+                    isSame = false;
+                    break;
+                  }
+                }
+
+                if (!isSame) {
+                  System.out.println("FUCKFUCKFUCK U!!!!!!!!!");
+                  blacklistQueue = blacklistCurQueue;
+                }
+            
+                try {
+                  Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                  e.printStackTrace();
+                }
+              }
+            } catch (SQLException sqex) {
+              System.out.println("SQLExeption: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+            }
+          }
+        };
+
+        thread.start();
+      } else {
       }
     }
 

@@ -49,6 +49,7 @@ public class MysqlHandler {
             this.firewallConn =
               DriverManager.getConnection("jdbc:mysql://" + host +
                   "/KLP-Firewall", userId, pw);
+
             this.isConnected = true;
         } catch (SQLException sqex) {
             System.out.println("SQLException: " + sqex.getMessage());
@@ -487,30 +488,13 @@ public class MysqlHandler {
             try {
               java.sql.Statement st = getSt();
 
-              String barTcpQuery = null;
-              String barUdpQuery = null;
-
-              if (code.equals("traffic")) {
-                barTcpQuery = "SELECT p.starttime, p.endtime, "
+              String barTcpQuery = "SELECT p.starttime, p.endtime, "
                   + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
                   + " WHERE p.tcpudp = 0 GROUP BY p.endtime ORDER BY p.endtime DESC";
 
-                barUdpQuery = "SELECT p.starttime, p.endtime, "
+              String barUdpQuery = "SELECT p.starttime, p.endtime, "
                   + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
                   + " WHERE p.tcpudp = 1 GROUP BY p.endtime ORDER BY p.endtime DESC";
-              } else if (code.equals("user")) {
-                barTcpQuery = "SELECT u.idx, p.starttime, p.endtime, "
-                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets"
-                  + " p JOIN users u ON (u.ip = p.source_ip OR u.ip = p.destination_ip)"
-                  + " AND (p.tcpudp = 0) GROUP BY u.idx, p.endtime ORDER BY "
-                  + "u.idx, p.endtime DESC";
-
-                barUdpQuery = "SELECT u.idx, p.starttime, p.endtime, "
-                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets"
-                  + " p JOIN users u ON (u.ip = p.source_ip OR u.ip = p.destination_ip)"
-                  + " AND (p.tcpudp = 1) GROUP BY u.idx, p.endtime ORDER BY "
-                  + "u.idx, p.endtime DESC";
-              }
 
               JsonObject reply = new JsonObject();
               ResultSet rs = null;

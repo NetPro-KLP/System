@@ -29,6 +29,11 @@ public class Dispatcher {
     }
     
 	public void dispatch(final ServerSocket serverSocket) {
+        EventHandler eventHandler = new EventHandler("localhost", "root", 
+            "klpsoma123");
+
+        eventHandler.checkGeoipBlacklist();
+
         System.out.println("Firewall QueueListener ThreadPool Size: " + Integer.toString(queueNumThreads));
 
         for (int i = 0; i < queueNumThreads; i++) {
