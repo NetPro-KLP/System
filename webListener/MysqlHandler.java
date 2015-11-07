@@ -346,6 +346,7 @@ public class MysqlHandler {
 
                 JsonObject reply = new JsonObject();
                 JsonArray trafficArray = new JsonArray();
+                JsonObject trafficObject = null;
                 ResultSet rs = null;
 
                 rs = st.executeQuery(trafficQuery);
@@ -353,34 +354,35 @@ public class MysqlHandler {
                 if(st.execute(trafficQuery))
                   rs = st.getResultSet();
 
-                int cnt = 0;
                 int preIdx = -1;
                 double totalbytesEachUser = 0;
                 int totalWarnEachUser = 0;
                 int totalDangerEachUser = 0;
+                int cnt = 0;
 
                 while(rs.next()) {
-                  JsonObject trafficObject = null;
-
                   int idx = rs.getInt(1);
                   long ip = rs.getLong(2);
                   int status = rs.getInt(3);
                   String endtime = rs.getString(4);
-                  int traffic = rs.getInt(5);
+                  long traffic = rs.getLong(5);
                   int danger = rs.getInt(6);
                   int warn = rs.getInt(7);
 
                   endtime = endtime.substring(0,19);
-                  totalbytesEachUser = totalbytesEachUser + traffic;
-                  totalWarnEachUser = totalWarnEachUser + warn;
-                  totalDangerEachUser = totalDangerEachUser + danger;
 
                   if (preIdx == -1) {
                     preIdx = idx;
                   }
 
                   if (preIdx != idx) {
-                    cnt = 1;
+                    trafficObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachUser);
+                    trafficObject.putNumber("totalwarn", totalWarnEachUser);
+                    trafficObject.putNumber("totaldanger",
+                        totalDangerEachUser);
+
+                    trafficArray.addObject(trafficObject);
                     reply.putArray(Integer.toString(preIdx), trafficArray);
 
                     trafficArray = new JsonArray();
@@ -388,29 +390,32 @@ public class MysqlHandler {
                     totalbytesEachUser = 0;
                     totalWarnEachUser = 0;
                     totalDangerEachUser = 0;
+                    cnt = 0;
                   }
-                  else
-                    cnt++;
 
+                  cnt = cnt + 1;
                   if (cnt <= 20) {
-
                     trafficObject = new JsonObject().putNumber("ip", ip);
                     trafficObject.putNumber("status", status);
                     trafficObject.putString("endtime", endtime);
                     trafficObject.putNumber("danger", danger);
                     trafficObject.putNumber("warn", warn);
                     trafficObject.putNumber("trafficPercentage", traffic);
-                    if (cnt == 20) {
-                      trafficObject.putNumber("totalbytes",
-                          totalbytesEachUser);
-                      trafficObject.putNumber("totalwarn", totalWarnEachUser);
-                      trafficObject.putNumber("totaldanger",
-                          totalDangerEachUser);
-                    }
                     trafficArray.addObject(trafficObject);
                   }
+
+                  totalbytesEachUser = totalbytesEachUser + traffic;
+                  totalWarnEachUser = totalWarnEachUser + warn;
+                  totalDangerEachUser = totalDangerEachUser + danger;
                 }
 
+                trafficObject = new JsonObject().putNumber("totalbytes",
+                  totalbytesEachUser);
+                trafficObject.putNumber("totalwarn", totalWarnEachUser);
+                trafficObject.putNumber("totaldanger",
+                  totalDangerEachUser);
+
+                trafficArray.addObject(trafficObject);
                 reply.putArray(Integer.toString(preIdx), trafficArray);
 
                 rs = st.executeQuery(realtimeQuery);
@@ -421,25 +426,39 @@ public class MysqlHandler {
                 cnt = 0;
                 trafficArray = new JsonArray();
                 double first = 0;
+                Date javatime = new Date();
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH"
+                    + ":mm:ss");
 
-                while (rs.next() && cnt < 260) {
-                  JsonObject trafficObject = new JsonObject();
+                String curTimeString = (df.format(javatime)).substring(0,19);
+                Date curTimeDate = df.parse(curTimeString);
+                long curTime = curTimeDate.getTime() / 1000;
+                long curTime2 = curTime - 240;
+
+                while (rs.next()) {
+                  trafficObject = new JsonObject();
 
                   String endtime = rs.getString(1);
                   endtime = endtime.substring(0,19);
                   double totalbytes = (double)rs.getFloat(2);
                   double[] data = new double[2];
 
-                  if (first == 0)
-                    first = totalbytes;
-
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                       + "HH:mm:ss");
                   Date date = dateFormat.parse(endtime);
                   long time = date.getTime() / 1000;
 
+                  if (first == 0) {
+                    first = totalbytes;
+                    curTime = time;
+                  }
+
+                  if (time <= curTime && time >= curTime2) {}
+                  else
+                    break;
+
                   data[0] = (double)cnt;
-                  data[1] = totalbytes/first * 30;
+                  data[1] = totalbytes/100000000 * 2;
                   trafficArray.add(data);
                   cnt = cnt + 1;
                 }
@@ -449,7 +468,7 @@ public class MysqlHandler {
                 socket.emit(emitTo, reply);
 
                 try {
-                  Thread.sleep(1000);
+                  Thread.sleep(500);
                 } catch (InterruptedException e) {
                   e.printStackTrace();
                 }

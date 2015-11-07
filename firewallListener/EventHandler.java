@@ -161,42 +161,55 @@ public class EventHandler {
 
                   if (endtime.equals(currentDate))
                     break;
-                  else {
-                    long source_ip = rs.getLong(1);
-                    String source_port = rs.getString(2);
-                    long destination_ip = rs.getLong(3);
-                    String destination_port = rs.getString(4);
-                    int tcpudp = rs.getInt(5);
-                    int packet_count = rs.getInt(6);
-                    int totalbytes = rs.getInt(7);
-                    String starttime = rs.getString(8);
-                    int danger = rs.getInt(10);
-                    int warn = rs.getInt(11);
+                  /*else {
+                    Thread diThread = new Thread() {
+                      public void run() {
+                        try {
+                        long source_ip = rs.getLong(1);
+                        String source_port = rs.getString(2);
+                        long destination_ip = rs.getLong(3);
+                        String destination_port = rs.getString(4);
+                        int tcpudp = rs.getInt(5);
+                        int packet_count = rs.getInt(6);
+                        int totalbytes = rs.getInt(7);
+                        String starttime = (rs.getString(8)).substring(0,19);
+                        endtime = (rs.getString(9)).substring(0,19);
+                        int danger = rs.getInt(10);
+                        int warn = rs.getInt(11);
 
-                    String deleteQuery = "DELETE FROM packets WHERE source_ip = '"
-                      + source_ip + "', source_port = '" + source_port + "', des"
-                      + "tination_ip = '" + destination_ip + "', destination_port"
-                      + " = '" + destination_port + "', tcpudp = '" + tcpudp
-                      + "', packet_count = '" + packet_count + "', totalbytes = "
-                      + "'" + totalbytes + "', starttime = '" + starttime + "'"
-                      + ", endtime = '" + endtime + "', danger = '" + danger
-                      + "', warn = '" + warn + "'";
+                        String deleteQuery = "DELETE FROM `packets` WHERE source_ip = '"
+                          + source_ip + "' AND source_port = '" + source_port + "'"
+                          + " AND destination_ip = '" + destination_ip + "' AND "
+                          + "destination_port = '" + destination_port + "' AND tcpudp = '"
+                          + tcpudp + "' AND packet_count = '" + packet_count + "'"
+                          + " AND totalbytes = '" + totalbytes + "' AND starttime = '"
+                          + starttime + "' AND endtime = '" + endtime + "' AND danger = '"
+                          + danger + "' AND warn = '" + warn + "'";
 
-                    java.sql.Statement updateSt = firewallConn.createStatement();
-                    updateSt.executeUpdate(deleteQuery);
+                        java.sql.Statement updateSt = firewallConn.createStatement();
+                        updateSt.executeUpdate(deleteQuery);
 
-                    String insertQuery = "INSERT INTO `backup_packets`(`source_i"
-                      + "p`, `source_port`, `destination_ip`, `destination_port`"
-                      + ", `tcpudp`, `packet_count`, `totalbytes`, `starttime`, "
-                      + "`endtime`, `danger`, `warn`) VALUES(" + source_ip + ", "
-                      + "'" + source_port + "', '" + destination_ip + "', '"
-                      + destination_port + "', '" + tcpudp + "', '"
-                      + packet_count + "', '" + totalbytes + "', '" + starttime
-                      + "', '" + endtime + "', '" + danger + "', '" + warn + "'"
-                      + ")";
+                        String insertQuery = "INSERT INTO `backup_packets`(`source_i"
+                          + "p`, `source_port`, `destination_ip`, `destination_port`"
+                          + ", `tcpudp`, `packet_count`, `totalbytes`, `starttime`, "
+                          + "`endtime`, `danger`, `warn`) VALUES(" + source_ip + ", "
+                          + "'" + source_port + "', '" + destination_ip + "', '"
+                          + destination_port + "', '" + tcpudp + "', '"
+                          + packet_count + "', '" + totalbytes + "', '" + starttime
+                          + "', '" + endtime + "', '" + danger + "', '" + warn + "'"
+                          + ")";
 
-                    updateSt.executeUpdate(insertQuery);
-                  }
+                        updateSt.executeUpdate(insertQuery);
+                        } catch (SQLException sqex) {
+                          System.out.println("SQLExeption: " + sqex.getMessage());
+                          System.out.println("SQLState: " + sqex.getSQLState());
+                        }
+                      }
+                    };
+
+                    diThread.start();
+                  }*/
+
                 }
 
                 try {

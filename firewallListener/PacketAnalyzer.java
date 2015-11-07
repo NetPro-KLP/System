@@ -26,7 +26,6 @@ public class PacketAnalyzer {
     public PacketAnalyzer (String code, String packet) {
         StringTokenizer token = new StringTokenizer(packet, "|");
 
-        System.out.println("packets received : " + packet);
         if (code.equals("exp") || code.equals("alm")) {
           if (token.hasMoreTokens() && code.equals("exp"))
               this.rowNum = Integer.parseInt(token.nextToken());
