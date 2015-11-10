@@ -130,17 +130,16 @@ public class Dispatcher {
                     System.out.println(saddrByte[2] & 0xff);
                     System.out.println(saddrByte[3] & 0xff);
 
-                    byte[] srcByte = new byte[4];
+                    byte[] srcByte = new byte[2];
                     dataInputStream.read(srcByte, 0, srcByte.length);
-                    String src = Long.toString(addrToLong(srcByte));
+                    String src = Integer.toString((srcByte[0] & 0xff) << 8 |
+                        (srcByte[1] & 0xff));
 
                     System.out.println("srcInt: " + src);
 
                     System.out.println("srcByte");
                     System.out.println(srcByte[0] & 0xff);
                     System.out.println(srcByte[1] & 0xff);
-                    System.out.println(srcByte[2] & 0xff);
-                    System.out.println(srcByte[3] & 0xff);
 
                     byte[] daddrByte = new byte[4];
                     dataInputStream.read(daddrByte, 0, daddrByte.length);
@@ -152,9 +151,10 @@ public class Dispatcher {
                     System.out.println(daddrByte[2] & 0xff);
                     System.out.println(daddrByte[3] & 0xff);
 
-                    byte[] dstByte = new byte[4];
+                    byte[] dstByte = new byte[2];
                     dataInputStream.read(dstByte, 0, dstByte.length);
-                    String dst = Long.toString(addrToLong(dstByte));
+                    String dst = Integer.toString((dstByte[0] & 0xff) << 8 |
+                        (dstByte[1] & 0xff));
 
                     System.out.println("dstByte");
                     System.out.println(dstByte[0] & 0xff);
@@ -189,6 +189,13 @@ public class Dispatcher {
 
                     byte[] packetCountByte = new byte[4];
                     dataInputStream.read(packetCountByte, 0, packetCountByte.length);
+                    swapByte = packetCountByte[0];
+                    packetCountByte[0] = packetCountByte[3];
+                    packetCountByte[3] = swapByte;
+                    swapByte = packetCountByte[2];
+                    packetCountByte[2] = packetCountByte[1];
+                    packetCountByte[1] = swapByte;
+
                     int packetCount = byteToInt(packetCountByte);
 
                     System.out.println("packetCountByte");
@@ -200,6 +207,13 @@ public class Dispatcher {
                     byte[] totalbytesByte = new byte[4];
                     dataInputStream.read(totalbytesByte, 0,
                        totalbytesByte.length);
+                    swapByte = totalbytesByte[0];
+                    totalbytesByte[0] = totalbytesByte[3];
+                    totalbytesByte[3] = swapByte;
+                    swapByte = totalbytesByte[1];
+                    totalbytesByte[1] = totalbytesByte[2];
+                    totalbytesByte[2] = swapByte;
+
                     int totalbytes = byteToInt(totalbytesByte);
 
                     System.out.println("totalbytesByte");
@@ -212,29 +226,13 @@ public class Dispatcher {
                     dataInputStream.read(starttimeByte, 0, starttimeByte.length);
                     String starttime = new String(starttimeByte);
 
-                    System.out.println("starttimeByte");
-                    System.out.println(starttimeByte[0] & 0xff);
-                    System.out.println(starttimeByte[1] & 0xff);
-                    System.out.println(starttimeByte[2] & 0xff);
-                    System.out.println(starttimeByte[3] & 0xff);
-                    System.out.println(starttimeByte[4] & 0xff);
-                    System.out.println(starttimeByte[5] & 0xff);
-                    System.out.println(starttimeByte[6] & 0xff);
-                    System.out.println(starttimeByte[7] & 0xff);
-                    System.out.println(starttimeByte[8] & 0xff);
-                    System.out.println(starttimeByte[9] & 0xff);
-                    System.out.println(starttimeByte[10] & 0xff);
-                    System.out.println(starttimeByte[11] & 0xff);
+                    System.out.println(starttimeByte.toString());
 
                     byte[] endtimeByte = new byte[19];
                     dataInputStream.read(endtimeByte, 0, endtimeByte.length);
                     String endtime = new String(endtimeByte);
 
-                    System.out.println("endtimeByte");
-                    System.out.println(endtimeByte[0] & 0xff);
-                    System.out.println(endtimeByte[1] & 0xff);
-                    System.out.println(endtimeByte[2] & 0xff);
-                    System.out.println(endtimeByte[3] & 0xff);
+                    System.out.println(endtimeByte.toString());
 
                     QueueListenedInfo queueListenedInfo = null;
                     String packet = saddr + "|" + src + "|" + daddr
