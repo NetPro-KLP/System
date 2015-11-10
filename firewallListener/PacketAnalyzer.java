@@ -29,7 +29,6 @@ public class PacketAnalyzer {
         expByte[0] = 101;
         expByte[1] = 120;
         expByte[2] = 112;
-        expByte[3] = 0;
 
         String expString = new String(expByte);
 

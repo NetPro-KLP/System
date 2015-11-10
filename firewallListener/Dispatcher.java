@@ -67,13 +67,12 @@ public class Dispatcher {
                 Socket socket = serverSocket.accept();
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
                 byte swapByte;
-                byte[] expByte = new byte[4];
-                byte[] iniByte = new byte[4];
+                byte[] expByte = new byte[3];
+                byte[] iniByte = new byte[3];
 
                 expByte[0] = 101;
                 expByte[1] = 120;
                 expByte[2] = 112;
-                expByte[3] = 0;
 
                 String expString = new String(expByte);
 
@@ -105,7 +104,7 @@ public class Dispatcher {
                 System.out.println(rowNumByte[2] & 0xff);
                 System.out.println(rowNumByte[3] & 0xff);
 
-                byte[] codeBuffer = new byte[4];
+                byte[] codeBuffer = new byte[3];
                 dataInputStream.read(codeBuffer, 0, codeBuffer.length);
                 String code = new String(codeBuffer);
                 System.out.println("code: " + code);
@@ -114,7 +113,6 @@ public class Dispatcher {
                 System.out.println(codeBuffer[0] & 0xff);
                 System.out.println(codeBuffer[1] & 0xff);
                 System.out.println(codeBuffer[2] & 0xff);
-                System.out.println(codeBuffer[3] & 0xff);
 
                 for (int i = 0; i < rowNum; i++) {
                   if (code.equals("ini")) {

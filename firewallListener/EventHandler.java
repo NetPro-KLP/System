@@ -348,27 +348,59 @@ public class EventHandler {
           Long saddrLong = Long.parseLong(saddr);
           Long daddrLong = Long.parseLong(daddr);
 
-          if ((saddrLong >= long_from_ip && saddrLong <= long_to_ip) || 
-              (daddrLong >= long_from_ip && daddrLong <= long_to_ip)) {
-            Date curtime = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String At = sdf.format(curtime);
+          Date curtime = new Date();
+          SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+          String At = sdf.format(curtime);
 
-            if (saddrLong >= long_from_ip && saddrLong <= long_to_ip) {
-              query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
-                + "`status`) VALUES(" + saddrLong + ", " + At + ", " + At
-                + ", 0)";
+          if (saddrLong >= long_from_ip && saddrLong <= long_to_ip) {
+            query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
+              + "`status`) VALUES(" + saddrLong + ", " + At + ", " + At
+              + ", 0)";
+
+            st.executeUpdate(query);
+          }
+          if (daddrLong >= long_from_ip && daddrLong <= long_to_ip) {
+            query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
+              + "`status`) VALUES(" + daddrLong + ", " + At + ", " + At
+              + ", 0)";
+
+            st.executeUpdate(query);
+          }
+
+          query = "SELECT country_code, country FROM GeoIP WHERE (from_ip_int <= " +
+            saddrLong + ") AND (to_ip_int >= " + saddrLong + ")";
+
+          rs = st.executeQuery(query);
+
+          if(st.execute(query))
+            rs = st.getResultSet();
+
+          while(rs.next()) {
+            String country_code = rs.getString(1);
+            String country = rs.getString(2);
+
+            query = "SELECT country_code FROM GeoIP_Traffic WHERE country_code"
+              + " = " + country_code;
+
+            ResultSet rs2 = st.executeQuery(query);
+
+            if(st.execute(query))
+              rs2 = st.getResultSet();
+
+            if(rs2.next()) {
+              query = "UPDATE GeoIP_Traffic SET totalbytes = totalbytes + "
+                + totalbytes + " WHERE country_code = " + country_code;
 
               st.executeUpdate(query);
-            }
-            if (daddrLong >= long_from_ip && daddrLong <= long_to_ip) {
-              query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
-                + "`status`) VALUES(" + daddrLong + ", " + At + ", " + At
-                + ", 0)";
+            } else {
+              query = "INSERT INTO `GeoIP_Traffic`(`country_code`, `country`, "
+                + "`totalbytes`) VALUES(" + country_code + ", " + country + ","
+                + " " + totalbytes + ")";
 
               st.executeUpdate(query);
             }
           }
+
         } catch (SQLException sqex) {
           System.out.println("SQLExeption: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
