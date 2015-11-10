@@ -13,7 +13,7 @@ public class Demultiplexer implements Runnable {
     private String packet;
 	
 	public Demultiplexer(QueueListenedInfo receivedInfo) {
-        this.socket = receivedInfo.getSocket();
+        //this.socket = receivedInfo.getSocket();
         this.firewallIp = receivedInfo.getFirewallIp();
         this.code = receivedInfo.getCode();
         if (this.code.equals("exp")) {
@@ -28,25 +28,28 @@ public class Demultiplexer implements Runnable {
                 "root", "klpsoma123");
 
             PacketAnalyzer packetAnalyzer = null;
-            OutputStream outputStream = socket.getOutputStream();
+            byte[] expByte = new byte[4];
+            expByte[0] = 101;
+            expByte[1] = 120;
+            expByte[2] = 112;
+            expByte[3] = 0;
+
+            String expString = new String(expByte);
+
+            if(code.equals(expString)) {
+              packetAnalyzer = new PacketAnalyzer(code, this.packet);
+              eventHandler.expiredEvent(packetAnalyzer);
+            }
 
             switch(code) {
                 case "ini":
                     eventHandler.initEvent(socket);
-                    outputStream.write("success".getBytes());
-                    break;
-                case "exp":
-                    packetAnalyzer = new PacketAnalyzer(code, this.packet);
-                    eventHandler.expiredEvent(packetAnalyzer);
-                    outputStream.write("success".getBytes());
                     break;
                 case "alm":
                     packetAnalyzer = new PacketAnalyzer(code, this.packet);
                     eventHandler.alarmEvent(packetAnalyzer);
-                    outputStream.write("success".getBytes());
                     break;
                 default:
-                    outputStream.write("cdError".getBytes());
                     break;
             }
 

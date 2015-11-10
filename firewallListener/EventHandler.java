@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Date;
+import java.util.StringTokenizer;
 
 public class EventHandler {
 
@@ -161,9 +162,7 @@ public class EventHandler {
 
                   if (endtime.equals(currentDate))
                     break;
-                  /*else {
-                    Thread diThread = new Thread() {
-                      public void run() {
+                  else {
                         try {
                         long source_ip = rs.getLong(1);
                         String source_port = rs.getString(2);
@@ -204,11 +203,7 @@ public class EventHandler {
                           System.out.println("SQLExeption: " + sqex.getMessage());
                           System.out.println("SQLState: " + sqex.getSQLState());
                         }
-                      }
-                    };
-
-                    diThread.start();
-                  }*/
+                  }
 
                 }
 
@@ -288,19 +283,92 @@ public class EventHandler {
           String starttime = packetAnalyzer.getStarttime();
           String endtime = packetAnalyzer.getEndtime();
 
+          long long_from_ip = 0;
+          long long_to_ip = 0;
+
           java.sql.Statement st = null;
           st = this.firewallConn.createStatement();
 
-          String query = "INSERT INTO `packets`(`source_ip`, `source_port`,"
-                 + "`destination_ip`, `destination_port`, `protocol`, `tcpudp`,"
-                 + "`packet_count`, `totalbytes`, `starttime`, `endtime`,"
-                 + "`danger`, `warn`) VALUES(" + saddr + ", " + src + ", "
-                 + daddr + ", " + dst + ", " + tcpudp + ", "
-                 + packetCount + ", " + totalbytes + ", " + starttime + ", "
-                 + endtime + ", " + danger + ", " + warn + ")";
+          String query = "SELECT bandwidth_from_ip, bandwidth_to_ip "
+            + "FROM system WHERE 1";
+
+          ResultSet rs = st.executeQuery(query);
+
+          if(st.execute(query))
+            rs = st.getResultSet();
+
+          while(rs.next()) {
+            String from_ip = rs.getString(1);
+            String to_ip = rs.getString(2);
+
+            long ip = 0;
+            long ip2 = 0;
+            long ip3 = 0;
+            long ip4 = 0;
+
+            StringTokenizer token = new StringTokenizer(from_ip, ".");
+            
+            if (token.hasMoreTokens())
+              ip = Long.parseLong(token.nextToken());
+            if (token.hasMoreTokens())
+              ip2 = Long.parseLong(token.nextToken());
+            if (token.hasMoreTokens())
+              ip3 = Long.parseLong(token.nextToken());
+            if (token.hasMoreTokens())
+              ip4 = Long.parseLong(token.nextToken());
+
+            long_from_ip = (ip & 0xff) << 24 | (ip2 & 0xff) << 16 |
+              (ip3 & 0xff) << 8 | (ip4 & 0xff);
+
+            token = new StringTokenizer(to_ip, ".");
+
+            if (token.hasMoreTokens())
+              ip = Long.parseLong(token.nextToken());
+            if (token.hasMoreTokens())
+              ip2 = Long.parseLong(token.nextToken());
+            if (token.hasMoreTokens())
+              ip3 = Long.parseLong(token.nextToken());
+            if (token.hasMoreTokens())
+              ip4 = Long.parseLong(token.nextToken());
+
+            long_to_ip = (ip & 0xff) << 24 | (ip2 & 0xff) << 16 |
+              (ip3 & 0xff) << 8 | (ip4 & 0xff);
+          }
+
+          query = "INSERT INTO `packets`(`source_ip`, `source_port`,"
+              + "`destination_ip`, `destination_port`, `protocol`, `tcpudp`,"
+              + "`packet_count`, `totalbytes`, `starttime`, `endtime`,"
+              + "`danger`, `warn`) VALUES(" + saddr + ", " + src + ", "
+              + daddr + ", " + dst + ", " + tcpudp + ", "
+              + packetCount + ", " + totalbytes + ", " + starttime + ", "
+              + endtime + ", " + danger + ", " + warn + ")";
 
           st.executeUpdate(query);
 
+          Long saddrLong = Long.parseLong(saddr);
+          Long daddrLong = Long.parseLong(daddr);
+
+          if ((saddrLong >= long_from_ip && saddrLong <= long_to_ip) || 
+              (daddrLong >= long_from_ip && daddrLong <= long_to_ip)) {
+            Date curtime = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String At = sdf.format(curtime);
+
+            if (saddrLong >= long_from_ip && saddrLong <= long_to_ip) {
+              query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
+                + "`status`) VALUES(" + saddrLong + ", " + At + ", " + At
+                + ", 0)";
+
+              st.executeUpdate(query);
+            }
+            if (daddrLong >= long_from_ip && daddrLong <= long_to_ip) {
+              query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
+                + "`status`) VALUES(" + daddrLong + ", " + At + ", " + At
+                + ", 0)";
+
+              st.executeUpdate(query);
+            }
+          }
         } catch (SQLException sqex) {
           System.out.println("SQLExeption: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());

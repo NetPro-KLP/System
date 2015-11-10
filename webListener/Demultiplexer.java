@@ -28,13 +28,6 @@ public class Demultiplexer implements Runnable {
             }
         });
 
-        socket.on("realtimeClose", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-                String emitTo = "realtimeClose res";
-                mysqlHandler.realtimeClose(emitTo);
-            }
-        });
-
         socket.on("tcpudp hour", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
                 String emitTo = "tcpudp hour res";

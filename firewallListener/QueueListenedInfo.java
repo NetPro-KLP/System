@@ -8,22 +8,28 @@ public class QueueListenedInfo {
     private String code;
     private String packet;
 
-    public QueueListenedInfo(Socket socket, long firewallIp, String code,
+    public QueueListenedInfo(long firewallIp, String code,
         String packet) {
-        this.socket = socket;
-        this.firewallIp = Long.toString(firewallIp);
-        this.code = code;
-        this.packet = packet;
+      this.firewallIp = Long.toString(firewallIp);
+      this.code = code;
+      this.packet = packet;
     }
 
-    public QueueListenedInfo(Socket socket, long firewallIp, String code) {
-      this.socket = socket;
+    public QueueListenedInfo(long firewallIp, String code) {
       this.firewallIp = Long.toString(firewallIp);
       this.code = code;
     }
 
+    public QueueListenedInfo(Socket socket, long firewallIp, String code,
+        String packet) {
+      this.socket = socket;
+      this.firewallIp = Long.toString(firewallIp);
+      this.code = code;
+      this.packet = packet;
+    }
+
     public Socket getSocket() {
-        return this.socket;
+      return this.socket;
     }
 
     public String getFirewallIp() {

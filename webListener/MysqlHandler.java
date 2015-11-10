@@ -342,8 +342,6 @@ public class MysqlHandler {
               + "packets GROUP BY endtime ORDER BY endtime DESC";
 
             try {
-              while(isRealtime) {
-
                 JsonObject reply = new JsonObject();
                 JsonArray trafficArray = new JsonArray();
                 JsonObject trafficObject = null;
@@ -467,12 +465,6 @@ public class MysqlHandler {
                 reply.putNumber("code", 200);
                 socket.emit(emitTo, reply);
 
-                try {
-                  Thread.sleep(500);
-                } catch (InterruptedException e) {
-                  e.printStackTrace();
-                }
-              } // while: isRealtime
             } catch (SQLException sqex) {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
@@ -483,17 +475,6 @@ public class MysqlHandler {
           } // Thread: run()
         }; // Thread thread = new Thread() {
         thread.start();
-      } else {
-        resToWeb(emitTo, "400", "Database connection failed");
-      }
-    }
-
-    public void realtimeClose(String emitTo) {
-
-      this.isRealtime = false;
-
-      if (this.isConnected) {
-        resToWeb(emitTo, "204", null);
       } else {
         resToWeb(emitTo, "400", "Database connection failed");
       }

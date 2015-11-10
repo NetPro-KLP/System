@@ -25,10 +25,15 @@ public class PacketAnalyzer {
 
     public PacketAnalyzer (String code, String packet) {
         StringTokenizer token = new StringTokenizer(packet, "|");
+        byte[] expByte = new byte[4];
+        expByte[0] = 101;
+        expByte[1] = 120;
+        expByte[2] = 112;
+        expByte[3] = 0;
 
-        if (code.equals("exp") || code.equals("alm")) {
-          if (token.hasMoreTokens() && code.equals("exp"))
-              this.rowNum = Integer.parseInt(token.nextToken());
+        String expString = new String(expByte);
+
+        if (code.equals(expString) || code.equals("alm")) {
           if (token.hasMoreTokens())
               this.saddr = token.nextToken();
           if (token.hasMoreTokens())
