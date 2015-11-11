@@ -35,6 +35,13 @@ public class Demultiplexer implements Runnable {
             }
         });
 
+        socket.on("dashboard", new Handler<JsonObject>() {
+            public void handle(JsonObject json) {
+                String emitTo = "dashboard res";
+                mysqlHandler.dashboard(emitTo);
+            }
+        });
+
         socket.on("tomorrow security", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
               String emitTo = "tomorrow security res";

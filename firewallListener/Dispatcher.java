@@ -79,9 +79,15 @@ public class Dispatcher {
                 System.out.println("FUCKU");
 
                 byte[] firewallIpByte = new byte[4];
-                dataInputStream.read(firewallIpByte, 0, firewallIpByte.length);
+                if (dataInputStream.read(firewallIpByte, 0,
+                      firewallIpByte.length) == -1)
+                  System.out.println("firewallIp read error!");
+
+                //String firewallIpString = new String(firewallIpByte);
+                //long firewallIp = Long.parseLong(firewallIpString);
                 long firewallIp = addrToLong(firewallIpByte);
 
+                //System.out.println(firewallIp);
                 System.out.println("firewallIpByte");
                 System.out.println(firewallIpByte[0] & 0xff);
                 System.out.println(firewallIpByte[1] & 0xff);
@@ -89,7 +95,11 @@ public class Dispatcher {
                 System.out.println(firewallIpByte[3] & 0xff);
 
                 byte[] rowNumByte = new byte[4];
-                dataInputStream.read(rowNumByte, 0, rowNumByte.length);
+                if (dataInputStream.read(rowNumByte, 0, rowNumByte.length) ==
+                    -1)
+                  System.out.println("rowNum read error!");
+
+                String rowNumString = new String(rowNumByte);
                 swapByte = rowNumByte[0];
                 rowNumByte[0] = rowNumByte[3];
                 rowNumByte[3] = swapByte;
@@ -97,15 +107,30 @@ public class Dispatcher {
                 rowNumByte[1] = rowNumByte[2];
                 rowNumByte[2] = swapByte;
                 int rowNum = byteToInt(rowNumByte);
+                //int rowNum = Integer.parseInt(rowNumString);
 
+                //System.out.println(rowNum);
+                
                 System.out.println("rowNumByte");
                 System.out.println(rowNumByte[0] & 0xff);
                 System.out.println(rowNumByte[1] & 0xff);
                 System.out.println(rowNumByte[2] & 0xff);
                 System.out.println(rowNumByte[3] & 0xff);
 
-                byte[] codeBuffer = new byte[3];
-                dataInputStream.read(codeBuffer, 0, codeBuffer.length);
+                byte[] codeBuffer = new byte[4];
+                if (dataInputStream.read(codeBuffer, 0, codeBuffer.length) ==
+                    -1)
+                  System.out.println("code read error!");
+
+                /*
+                byte[] codeByte = new byte[4];
+                codeByte[0] = (codeBuffer[0] & 0xff)*100 + (codeBuffer[1] &
+                    0xff)*10 + (codeBuffer[2] & 0xff);
+                codeByte[1] = (codeBuffer[3] & 0xff)*100 + (codeBuffer[4] &
+                    0xff)*10 + (codeBuffer[5] & 0xff);
+                codeByte[2] = (codeBufer[6] & 0xff)*100 + (codeBuffer[7] &
+                    0xff)*10 + (codeBuffer[8]);*/
+
                 String code = new String(codeBuffer);
                 System.out.println("code: " + code);
 
@@ -113,6 +138,7 @@ public class Dispatcher {
                 System.out.println(codeBuffer[0] & 0xff);
                 System.out.println(codeBuffer[1] & 0xff);
                 System.out.println(codeBuffer[2] & 0xff);
+                System.out.println(codeBuffer[3] & 0xff);
 
                 for (int i = 0; i < rowNum; i++) {
                   if (code.equals("ini")) {
@@ -121,7 +147,10 @@ public class Dispatcher {
                     queue.offer(queueListenedInfo);
                   } else if (code.equals(expString) || code.equals("alm")) {
                     byte[] saddrByte = new byte[4];
-                    dataInputStream.read(saddrByte, 0, saddrByte.length);
+                    if (dataInputStream.read(saddrByte, 0, saddrByte.length) ==
+                        -1)
+                      System.out.println("saddr read error!");
+
                     long saddr = addrToLong(saddrByte);
 
                     System.out.println("saddrByte");
@@ -155,6 +184,8 @@ public class Dispatcher {
                     dataInputStream.read(dstByte, 0, dstByte.length);
                     String dst = Integer.toString((dstByte[0] & 0xff) << 8 |
                         (dstByte[1] & 0xff));
+
+                    System.out.println("dstInt: " + dst);
 
                     System.out.println("dstByte");
                     System.out.println(dstByte[0] & 0xff);
