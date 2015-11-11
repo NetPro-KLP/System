@@ -354,15 +354,15 @@ public class EventHandler {
 
           if (saddrLong >= long_from_ip && saddrLong <= long_to_ip) {
             query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
-              + "`status`) VALUES(" + saddrLong + ", " + At + ", " + At
-              + ", 0)";
+              + "`status`) VALUES(" + saddrLong + ", '" + At + "', '" + At
+              + "', 0)";
 
             st.executeUpdate(query);
           }
           if (daddrLong >= long_from_ip && daddrLong <= long_to_ip) {
             query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
-              + "`status`) VALUES(" + daddrLong + ", " + At + ", " + At
-              + ", 0)";
+              + "`status`) VALUES(" + daddrLong + ", '" + At + "', '" + At
+              + "', 0)";
 
             st.executeUpdate(query);
           }
@@ -380,24 +380,25 @@ public class EventHandler {
             String country = rs.getString(2);
 
             query = "SELECT country_code FROM GeoIP_Traffic WHERE country_code"
-              + " = " + country_code;
+              + " = '" + country_code + "'";
 
-            ResultSet rs2 = st.executeQuery(query);
+            java.sql.Statement st2 = this.firewallConn.createStatement();
+            ResultSet rs2 = st2.executeQuery(query);
 
-            if(st.execute(query))
-              rs2 = st.getResultSet();
+            if(st2.execute(query))
+              rs2 = st2.getResultSet();
 
             if(rs2.next()) {
               query = "UPDATE GeoIP_Traffic SET totalbytes = totalbytes + "
-                + totalbytes + " WHERE country_code = " + country_code;
+                + totalbytes + " WHERE country_code = '" + country_code + "'";
 
-              st.executeUpdate(query);
+              st2.executeUpdate(query);
             } else {
               query = "INSERT INTO `GeoIP_Traffic`(`country_code`, `country`, "
-                + "`totalbytes`) VALUES(" + country_code + ", " + country + ","
-                + " " + totalbytes + ")";
+                + "`totalbytes`) VALUES('" + country_code + "', '" + country
+                + "', " + totalbytes + ")";
 
-              st.executeUpdate(query);
+              st2.executeUpdate(query);
             }
           }
 

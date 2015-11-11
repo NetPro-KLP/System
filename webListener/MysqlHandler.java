@@ -514,19 +514,19 @@ public class MysqlHandler {
 
               String thisMonth = today.substring(0,8) + "01 00:00:00";
               String thisMonthBackupTcpQuery = "SELECT totalbytes, "
-                + "endtime, FROM backup_packets WHERE (endtime >= '"
+                + "endtime FROM backup_packets WHERE (endtime >= '"
                 + thisMonth + "') AND (tcpudp = 0) ORDER BY endtime ASC";
 
               String thisMonthBackupUdpQuery = "SELECT totalbytes, "
-                + "endtime, FROM backup_packets WHERE (endtime >= '"
+                + "endtime FROM backup_packets WHERE (endtime >= '"
                 + thisMonth + "') AND (tcpudp = 1) ORDER BY endtime ASC";
 
               String thisMonthTcpQuery = "SELECT SUM(totalbytes), "
-                + "endtime, FROM packets WHERE (endtime >= '"
+                + "endtime FROM packets WHERE (endtime >= '"
                 + today + "') AND (tcpudp = 0)";
 
               String thisMonthUdpQuery = "SELECT SUM(totalbytes), "
-                + "endtime, FROM packets WHERE (endtime >= '"
+                + "endtime FROM packets WHERE (endtime >= '"
                 + today + "') AND (tcpudp = 1)";
 
               ResultSet rs = st.executeQuery(todayTcpQuery);
@@ -536,8 +536,8 @@ public class MysqlHandler {
 
               String preDate = null;
               JsonArray jsonArray = new JsonArray();
-              JsonObject jsonObject = new JsonObject();
-              DateFormat dateFormat = null;
+              DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                  + "HH:mm:ss");
               double totalbytesEach = 0;
               long time = 0;
 
@@ -549,29 +549,29 @@ public class MysqlHandler {
                   preDate = endtime;
 
                 if (!preDate.equals(endtime)) {
-                  dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   date = dateFormat.parse(preDate);
                   time = date.getTime() / 1000;
 
-                  jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                  jsonArray.addObject(jsonObject);
+                  double[] array = new double[2];
+                  array[0] = (double)time;
+                  array[1] = totalbytesEach;
+                  jsonArray.add(array);
 
                   preDate = endtime;
                   totalbytesEach = 0;
-                  jsonObject = new JsonObject();
                 }
 
                 totalbytesEach = totalbytesEach + totalbytes;
               }
 
               if (preDate != null) {
-                dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date = dateFormat.parse(preDate);
                 time = date.getTime() / 1000;
 
-                jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                jsonArray.addObject(jsonObject);
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
                 reply.putArray("todayTcp", jsonArray);
               }
 
@@ -582,7 +582,6 @@ public class MysqlHandler {
 
               preDate = null;
               jsonArray = new JsonArray();
-              jsonObject = new JsonObject();
               totalbytesEach = 0;
               time = 0;
 
@@ -594,29 +593,29 @@ public class MysqlHandler {
                   preDate = endtime;
 
                 if (!preDate.equals(endtime)) {
-                  dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   date = dateFormat.parse(preDate);
                   time = date.getTime() / 1000;
 
-                  jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                  jsonArray.addObject(jsonObject);
+                  double[] array = new double[2];
+                  array[0] = (double)time;
+                  array[1] = totalbytesEach;
+                  jsonArray.add(array);
 
                   preDate = endtime;
                   totalbytesEach = 0;
-                  jsonObject = new JsonObject();
                 }
 
                 totalbytesEach = totalbytesEach + totalbytes;
               }
 
               if (preDate != null) {
-                dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date = dateFormat.parse(preDate);
                 time = date.getTime() / 1000;
 
-                jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                jsonArray.addObject(jsonObject);
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
                 reply.putArray("todayUdp", jsonArray);
               }
 
@@ -627,7 +626,6 @@ public class MysqlHandler {
 
               preDate = null;
               jsonArray = new JsonArray();
-              jsonObject = new JsonObject();
               totalbytesEach = 0;
               time = 0;
 
@@ -639,29 +637,29 @@ public class MysqlHandler {
                   preDate = endtime;
 
                 if (!preDate.equals(endtime)) {
-                  dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   date = dateFormat.parse(preDate);
                   time = date.getTime() / 1000;
 
-                  jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                  jsonArray.addObject(jsonObject);
+                  double[] array = new double[2];
+                  array[0] = (double)time;
+                  array[1] = totalbytesEach;
+                  jsonArray.add(array);
 
                   preDate = endtime;
                   totalbytesEach = 0;
-                  jsonObject = new JsonObject();
                 }
 
                 totalbytesEach = totalbytesEach + totalbytes;
               }
 
               if (preDate != null) {
-                dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date = dateFormat.parse(preDate);
                 time = date.getTime() / 1000;
 
-                jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                jsonArray.addObject(jsonObject);
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
                 reply.putArray("yesterdayTcp", jsonArray);
               }
 
@@ -672,7 +670,6 @@ public class MysqlHandler {
 
               preDate = null;
               jsonArray = new JsonArray();
-              jsonObject = new JsonObject();
               totalbytesEach = 0;
               time = 0;
 
@@ -684,32 +681,32 @@ public class MysqlHandler {
                   preDate = endtime;
 
                 if (!preDate.equals(endtime)) {
-                  dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   date = dateFormat.parse(preDate);
                   time = date.getTime() / 1000;
 
-                  jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                  jsonArray.addObject(jsonObject);
+                  double[] array = new double[2];
+                  array[0] = (double)time;
+                  array[1] = totalbytesEach;
+                  jsonArray.add(array);
 
                   preDate = endtime;
                   totalbytesEach = 0;
-                  jsonObject = new JsonObject();
                 }
 
                 totalbytesEach = totalbytesEach + totalbytes;
               }
 
               if (preDate != null) {
-                dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date = dateFormat.parse(preDate);
                 time = date.getTime() / 1000;
 
-                jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                jsonArray.addObject(jsonObject);
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
                 reply.putArray("yesterdayUdp", jsonArray);
               }
-/*
+
               rs = st.executeQuery(thisMonthBackupTcpQuery);
 
               if (st.execute(thisMonthBackupTcpQuery))
@@ -717,7 +714,6 @@ public class MysqlHandler {
 
               preDate = null;
               jsonArray = new JsonArray();
-              jsonObject = new JsonObject();
               totalbytesEach = 0;
               time = 0;
 
@@ -729,31 +725,110 @@ public class MysqlHandler {
                   preDate = endtime;
 
                 if (!preDate.equals(endtime)) {
-                  dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   date = dateFormat.parse(preDate);
                   time = date.getTime() / 1000;
 
-                  jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                  jsonArray.addObject(jsonObject);
+                  double[] array = new double[2];
+                  array[0] = (double)time;
+                  array[1] = totalbytesEach;
+                  jsonArray.add(array);
 
                   preDate = endtime;
                   totalbytesEach = 0;
-                  jsonObject = new JsonObject();
                 }
 
                 totalbytesEach = totalbytesEach + totalbytes;
               }
 
               if (preDate != null) {
-                dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 date = dateFormat.parse(preDate);
                 time = date.getTime() / 1000;
 
-                jsonObject.putNumber(Long.toString(time), totalbytesEach);
-                jsonArray.addObject(jsonObject);
-                reply.putArray("yesterdayUdp", jsonArray);
-              }*/
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
+              }
+
+              rs = st.executeQuery(thisMonthTcpQuery);
+
+              if (st.execute(thisMonthTcpQuery))
+                rs = st.getResultSet();
+
+              while (rs.next()) {
+                double totalbytes = rs.getDouble(1);
+                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+                date = dateFormat.parse(endtime);
+                time = date.getTime() / 1000;
+
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
+                reply.putArray("thisMonthTcp", jsonArray);
+              }
+
+              rs = st.executeQuery(thisMonthBackupUdpQuery);
+
+              if (st.execute(thisMonthBackupUdpQuery))
+                rs = st.getResultSet();
+
+              preDate = null;
+              jsonArray = new JsonArray();
+              totalbytesEach = 0;
+              time = 0;
+
+              while (rs.next()) {
+                double totalbytes = rs.getDouble(1);
+                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+
+                if (preDate == null)
+                  preDate = endtime;
+
+                if (!preDate.equals(endtime)) {
+                  date = dateFormat.parse(preDate);
+                  time = date.getTime() / 1000;
+
+                  double[] array = new double[2];
+                  array[0] = (double)time;
+                  array[1] = totalbytesEach;
+                  jsonArray.add(array);
+
+                  preDate = endtime;
+                  totalbytesEach = 0;
+                }
+
+                totalbytesEach = totalbytesEach + totalbytes;
+              }
+
+              if (preDate != null) {
+                date = dateFormat.parse(preDate);
+                time = date.getTime() / 1000;
+
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
+              }
+
+              rs = st.executeQuery(thisMonthUdpQuery);
+
+              if (st.execute(thisMonthUdpQuery))
+                rs = st.getResultSet();
+
+              while (rs.next()) {
+                double totalbytes = rs.getDouble(1);
+                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+                date = dateFormat.parse(endtime);
+                time = date.getTime() / 1000;
+
+                double[] array = new double[2];
+                array[0] = (double)time;
+                array[1] = totalbytesEach;
+                jsonArray.add(array);
+                reply.putArray("thisMonthUdp", jsonArray);
+              }
+              
               reply.putNumber("code", 200);
               socket.emit(emitTo, reply);
             } catch(SQLException sqex) {
