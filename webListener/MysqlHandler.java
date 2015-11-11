@@ -353,21 +353,27 @@ public class MysqlHandler {
                   rs = st.getResultSet();
 
                 int preIdx = -1;
+                int idx = 0;
+                long ip = 0;
+                int status = 0;
+                String endtime = null;
+                long traffic = 0;
                 double totalbytesEachUser = 0;
+                double totalbytes = 0;
                 int totalWarnEachUser = 0;
+                int warn = 0;
                 int totalDangerEachUser = 0;
+                int danger = 0;
                 int cnt = 0;
 
                 while(rs.next()) {
-                  int idx = rs.getInt(1);
-                  long ip = rs.getLong(2);
-                  int status = rs.getInt(3);
-                  String endtime = rs.getString(4);
-                  long traffic = rs.getLong(5);
-                  int danger = rs.getInt(6);
-                  int warn = rs.getInt(7);
-
-                  endtime = endtime.substring(0,19);
+                  idx = rs.getInt(1);
+                  ip = rs.getLong(2);
+                  status = rs.getInt(3);
+                  endtime = (rs.getString(4)).substring(0,19);
+                  traffic = rs.getLong(5);
+                  danger = rs.getInt(6);
+                  warn = rs.getInt(7);
 
                   if (preIdx == -1) {
                     preIdx = idx;
@@ -436,9 +442,8 @@ public class MysqlHandler {
                 while (rs.next()) {
                   trafficObject = new JsonObject();
 
-                  String endtime = rs.getString(1);
-                  endtime = endtime.substring(0,19);
-                  double totalbytes = (double)rs.getFloat(2);
+                  endtime = (rs.getString(1)).substring(0,19);
+                  totalbytes = rs.getDouble(2);
                   double[] data = new double[2];
 
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
@@ -539,11 +544,13 @@ public class MysqlHandler {
               DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                   + "HH:mm:ss");
               double totalbytesEach = 0;
+              double totalbytes = 0;
+              String endtime = null;
               long time = 0;
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,14) + "00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,14) + "00:00";
 
                 if (preDate == null)
                   preDate = endtime;
@@ -586,8 +593,8 @@ public class MysqlHandler {
               time = 0;
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,14) + "00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,14) + "00:00";
 
                 if (preDate == null)
                   preDate = endtime;
@@ -630,8 +637,8 @@ public class MysqlHandler {
               time = 0;
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,14) + "00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,14) + "00:00";
 
                 if (preDate == null)
                   preDate = endtime;
@@ -674,8 +681,8 @@ public class MysqlHandler {
               time = 0;
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,14) + "00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,14) + "00:00";
 
                 if (preDate == null)
                   preDate = endtime;
@@ -718,8 +725,8 @@ public class MysqlHandler {
               time = 0;
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
 
                 if (preDate == null)
                   preDate = endtime;
@@ -756,8 +763,8 @@ public class MysqlHandler {
                 rs = st.getResultSet();
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
                 date = dateFormat.parse(endtime);
                 time = date.getTime() / 1000;
 
@@ -779,8 +786,8 @@ public class MysqlHandler {
               time = 0;
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
 
                 if (preDate == null)
                   preDate = endtime;
@@ -817,8 +824,8 @@ public class MysqlHandler {
                 rs = st.getResultSet();
 
               while (rs.next()) {
-                double totalbytes = rs.getDouble(1);
-                String endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
+                totalbytes = rs.getDouble(1);
+                endtime = (rs.getString(2)).substring(0,11) + "00:00:00";
                 date = dateFormat.parse(endtime);
                 time = date.getTime() / 1000;
 
@@ -872,35 +879,31 @@ public class MysqlHandler {
 
               String preTime = "init";
               double totalbytesEachTime = 0;
+              double totalbytes = 0;
               int dangerEachTime = 0;
+              int danger = 0;
               int warnEachTime = 0;
+              int warn = 0;
+              String starttime = null;
+              String endtime = null;
               String preDate = null;
 
               JsonArray jsonArray = new JsonArray();
               JsonObject jsonGroup = new JsonObject();
 
-              int preIdx = -1;
               int unitCnt = 0;
 
               while (rs.next()) {
                 JsonObject tcpObject = new JsonObject();
 
-                int idx = 0;
-                String starttime = null;
-                String endtime = null;
-                double totalbytes = 0;
-                int danger = 0;
-                int warn = 0;
-
                 starttime = rs.getString(1);
                 endtime = rs.getString(2);
-                totalbytes = (double)rs.getFloat(3);
+                totalbytes = rs.getDouble(3);
                 danger = rs.getInt(4);
                 warn = rs.getInt(5);
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
-
 
                 String curtime = endtime.substring(11,13) + ":00:00";
                 String curdate = endtime.substring(0,11);
@@ -908,7 +911,6 @@ public class MysqlHandler {
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
-                  preIdx = idx;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
@@ -983,9 +985,7 @@ public class MysqlHandler {
 
                 jsonGroup.putArray(Long.toString(time), jsonArray);
 
-                if (code.equals("traffic"))
-                  reply.putObject("tcpTraffic", jsonGroup);
-
+                reply.putObject("tcpTraffic", jsonGroup);
               }
 
               rs = st.executeQuery(barUdpQuery);
@@ -1005,20 +1005,11 @@ public class MysqlHandler {
               while (rs.next()) {
                 JsonObject udpObject = new JsonObject();
 
-                int idx = 0;
-                String starttime = null;
-                String endtime = null;
-                double totalbytes = 0;
-                int danger = 0;
-                int warn = 0;
-
-                if (code.equals("traffic")) {
-                  starttime = rs.getString(1);
-                  endtime = rs.getString(2);
-                  totalbytes = (double)rs.getFloat(3);
-                  danger = rs.getInt(4);
-                  warn = rs.getInt(5);
-                }
+                starttime = rs.getString(1);
+                endtime = rs.getString(2);
+                totalbytes = rs.getDouble(3);
+                danger = rs.getInt(4);
+                warn = rs.getInt(5);
 
                 starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
@@ -1029,7 +1020,6 @@ public class MysqlHandler {
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
-                  preIdx = idx;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
@@ -1109,20 +1099,11 @@ public class MysqlHandler {
                 while (rs.next() && unitCnt < 24) {
                   JsonObject tcpObject = new JsonObject();
 
-                  int idx = 0;
-                  String starttime = null;
-                  String endtime = null;
-                  double totalbytes = 0;
-                  int danger = 0;
-                  int warn = 0;
-
-                  if (code.equals("traffic")) {
-                    starttime = rs.getString(1);
-                    endtime = rs.getString(2);
-                    totalbytes = (double)rs.getFloat(3);
-                    danger = rs.getInt(4);
-                    warn = rs.getInt(5);
-                  }
+                  starttime = rs.getString(1);
+                  endtime = rs.getString(2);
+                  totalbytes = rs.getDouble(3);
+                  danger = rs.getInt(4);
+                  warn = rs.getInt(5);
 
                   starttime = starttime.substring(0,19);
                   endtime = endtime.substring(0,19);
@@ -1133,7 +1114,6 @@ public class MysqlHandler {
                   if (preTime.equals("init")) {
                     preTime = curtime;
                     preDate = curdate;
-                    preIdx = idx;
                   }
 
                   if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
@@ -1192,12 +1172,10 @@ public class MysqlHandler {
                     jsonGroup.putArray(Long.toString(time), jsonArray);
                   }
 
-                  if (code.equals("traffic")) {
-                    JsonObject preGroup = reply.getObject("tcpTraffic");
-                    preGroup.mergeIn(jsonGroup);
-                    reply.removeField("tcpTraffic");
-                    reply.putObject("tcpTraffic", preGroup);
-                  }
+                  JsonObject preGroup = reply.getObject("tcpTraffic");
+                  preGroup.mergeIn(jsonGroup);
+                  reply.removeField("tcpTraffic");
+                  reply.putObject("tcpTraffic", preGroup);
                 }
 
                 unitCnt = preUnitCnt;
@@ -1219,20 +1197,11 @@ public class MysqlHandler {
                 while (rs.next() && unitCnt < 24) {
                   JsonObject udpObject = new JsonObject();
 
-                  int idx = 0;
-                  String starttime = null;
-                  String endtime = null;
-                  double totalbytes = 0;
-                  int danger = 0;
-                  int warn = 0;
-
-                  if (code.equals("traffic")) {
-                    starttime = rs.getString(1);
-                    endtime = rs.getString(2);
-                    totalbytes = (double)rs.getFloat(3);
-                    danger = rs.getInt(4);
-                    warn = rs.getInt(5);
-                  }
+                  starttime = rs.getString(1);
+                  endtime = rs.getString(2);
+                  totalbytes = rs.getDouble(3);
+                  danger = rs.getInt(4);
+                  warn = rs.getInt(5);
 
                   starttime = starttime.substring(0,19);
                   endtime = endtime.substring(0,19);
@@ -1243,7 +1212,6 @@ public class MysqlHandler {
                   if (preTime.equals("init")) {
                     preTime = curtime;
                     preDate = curdate;
-                    preIdx = idx;
                   }
 
                   if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
@@ -1302,12 +1270,10 @@ public class MysqlHandler {
                     jsonGroup.putArray(Long.toString(time), jsonArray);
                   }
 
-                  if (code.equals("traffic")) {
-                    JsonObject preGroup = reply.getObject("udpTraffic");
-                    preGroup.mergeIn(jsonGroup);
-                    reply.removeField("udpTraffic");
-                    reply.putObject("udpTraffic", preGroup);
-                  }
+                  JsonObject preGroup = reply.getObject("udpTraffic");
+                  preGroup.mergeIn(jsonGroup);
+                  reply.removeField("udpTraffic");
+                  reply.putObject("udpTraffic", preGroup);
                 }
               }
 
@@ -1340,27 +1306,9 @@ public class MysqlHandler {
               JsonObject reply = new JsonObject();
               JsonArray jsonArray = new JsonArray();
 
-              String packetsQuery = null;
-              String backupQuery = null;
-
-              if (unit.equals("danger")) {
-                packetsQuery = "SELECT SUM(danger), endtime FROM packets WHERE 1";
-                backupQuery = "SELECT SUM(danger), endtime FROM backup_packets GROUP BY "
+              String packetsQuery = "SELECT SUM(danger), SUM(warn), endtime FROM packets WHERE 1";
+              String backupQuery = "SELECT SUM(danger), SUM(warn), endtime FROM backup_packets GROUP BY "
                   + "endtime ORDER BY endtime DESC";
-              } else if (unit.equals("warn")) {
-                packetsQuery = "SELECT SUM(warn), endtime FROM packets WHERE 1";
-                backupQuery = "SELECT SUM(warn), endtime FROM backup_packets GROUP BY "
-                  + "endtime ORDER BY endtime DESC";
-              } else if (unit.equals("traffic")) {
-                packetsQuery = "SELECT SUM(totalbytes), endtime FROM packets WHERE 1";
-                backupQuery = "SELECT SUM(totalbytes), endtime FROM backup_packets GROUP BY "
-                  + "endtime ORDER BY endtime DESC";
-              } else if (unit.equals("dangerWarn") ||
-                  unit.equals("weekDangerWarn")) {
-                packetsQuery = "SELECT SUM(danger), SUM(warn), endtime FROM packets WHERE 1";
-                backupQuery = "SELECT SUM(danger), SUM(warn), endtime FROM backup_packets GROUP BY "
-                  + "endtime ORDER BY endtime DESC";
-              }
 
               rs = st.executeQuery(packetsQuery);
 
@@ -1369,52 +1317,22 @@ public class MysqlHandler {
 
               int i = -1;
               int weekStart = 0;
-
+              int eachUnit = 0;
+              double traffic = 0;
+              String endtime = null;
+              
               while (rs.next()) {
-                int eachUnit = 0;
-                double traffic = 0;
-
-                if (unit.equals("traffic"))
-                  traffic = (double)rs.getFloat(1);
-                else if (unit.equals("dangerWarn") ||
-                    unit.equals("weekDangerWarn"))
-                  eachUnit = rs.getInt(1) + rs.getInt(2);
-                else
-                  eachUnit = rs.getInt(1);
-
-                String endtime = null;
-
-                if (unit.equals("dangerWarn") || unit.equals("weekDangerWarn"))
-                  endtime = (rs.getString(3)).substring(0,10);
-                else
-                  endtime = (rs.getString(2)).substring(0,10);
+                eachUnit = rs.getInt(1) + rs.getInt(2);
+                endtime = (rs.getString(3)).substring(0,10);
 
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
                 Date date = dateFormat.parse(endtime);
                 long time = date.getTime() / 1000;
 
-                if (unit.equals("weekDangerWarn")) {
-                  Calendar calendar = Calendar.getInstance();
-                  calendar.setTime(date);
-
-                  weekStart = calendar.get(Calendar.DAY_OF_WEEK);
-                  if (weekStart != 1) {
-                    break;
-                  }
-                  i = i + 1;
-                }
-
-                if (unit.equals("traffic"))
-                  reply.putNumber(Long.toString(time), traffic);
-                else if (unit.equals("weekDangerWarn"))
-                  reply.putNumber("sun", eachUnit);
-                else {
-                  Long[] data = new Long[2];
-                  data[0] = time;
-                  data[1] = (long)eachUnit;
-                  jsonArray.add(data);
-                }
+                Long[] data = new Long[2];
+                data[0] = time;
+                data[1] = (long)eachUnit;
+                jsonArray.add(data);
               }
 
               rs = st.executeQuery(backupQuery);
@@ -1431,93 +1349,18 @@ public class MysqlHandler {
                 if (i == 6)
                   break;
 
-                double traffic = 0;
-                int eachUnit = 0;
-
-                if (unit.equals("traffic"))
-                  traffic = (double)rs.getFloat(1);
-                else if (unit.equals("dangerWarn") ||
-                    unit.equals("weekDangerWarn"))
-                  eachUnit = rs.getInt(1) + rs.getInt(2);
-                else
-                  eachUnit = rs.getInt(1);
-
-                String endtime = null;
-
-                if (unit.equals("dangerWarn") || unit.equals("weekDangerWarn"))
-                  endtime = (rs.getString(3)).substring(0,10);
-                else
-                  endtime = (rs.getString(2)).substring(0,10);
+                eachUnit = rs.getInt(1) + rs.getInt(2);
+                endtime = (rs.getString(3)).substring(0,10);
                 
-                if (i == -1 && !unit.equals("weekDangerWarn")) {
-                  day = endtime;
-                  i = 0;
-                } else if (i == 0 && weekStart == 1 &&
-                    unit.equals("weekDangerWarn") && flag) {
-                  day = endtime;
-                  flag = !flag;
-                } else if (i == -1 && weekStart != 1 &&
-                    unit.equals("weekDangerWarn") && flag) {
-                  weekStart = weekStart - 1;
-                  flag = !flag;
-                  if (weekStart == 1)
-                    day = endtime;
-                  else {
-                    while(rs.next()) {
-
-                      eachUnit = rs.getInt(1) + rs.getInt(2);
-                      endtime = (rs.getString(3)).substring(0,10);
-                      day = endtime;
-
-                      DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                      Date date = dateFormat.parse(endtime);
-
-                      Calendar calendar = Calendar.getInstance();
-                      calendar.setTime(date);
-
-                      weekStart = calendar.get(Calendar.DAY_OF_WEEK);
-
-                      if (weekStart == 1) {
-                        break;
-                      }
-
-                    }
-                  }
-                }
-
                 if (!day.equals(endtime)) {
                   DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                   Date date = dateFormat.parse(day);
                   long time = date.getTime() / 1000;
 
-                  if (unit.equals("traffic"))
-                    reply.putNumber(Long.toString(time), totalTraffic);
-                  else if (unit.equals("weekDangerWarn")) {
-                    String dayOfWeek = null;
-                    if (i == -1)
-                      dayOfWeek = "sun";
-                    else if (i == 0)
-                      dayOfWeek = "sat";
-                    else if (i == 1)
-                      dayOfWeek = "fri";
-                    else if (i == 2)
-                      dayOfWeek = "thu";
-                    else if (i == 3)
-                      dayOfWeek = "wed";
-                    else if (i == 4)
-                      dayOfWeek = "tue";
-                    else if (i == 5)
-                      dayOfWeek = "mon";
-
-                    reply.putNumber(dayOfWeek, totalUnit);
-                    reply.putString(Long.toString(time), dayOfWeek);
-                  }
-                  else {
-                    Long[] data = new Long[2];
-                    data[0] = time;
-                    data[1] = (long)totalUnit;
-                    jsonArray.add(data);
-                  }
+                  Long[] data = new Long[2];
+                  data[0] = time;
+                  data[1] = (long)totalUnit;
+                  jsonArray.add(data);
 
                   day = endtime;
                   totalUnit = 0;
@@ -1529,9 +1372,7 @@ public class MysqlHandler {
                 totalTraffic = totalTraffic + traffic;
               }
 
-              if (unit.equals("dangerWarn"))
-                reply.putArray("dangerWarn", jsonArray);
-
+              reply.putArray("dangerWarn", jsonArray);
               reply.putNumber("code", 200);
               socket.emit(emitTo, reply);
             } catch (SQLException sqex) {

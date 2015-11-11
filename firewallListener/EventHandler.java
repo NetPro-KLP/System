@@ -340,8 +340,8 @@ public class EventHandler {
               + "`packet_count`, `totalbytes`, `starttime`, `endtime`,"
               + "`danger`, `warn`) VALUES(" + saddr + ", " + src + ", "
               + daddr + ", " + dst + ", " + tcpudp + ", "
-              + packetCount + ", " + totalbytes + ", " + starttime + ", "
-              + endtime + ", " + danger + ", " + warn + ")";
+              + packetCount + ", " + totalbytes + ", '" + starttime + "', '"
+              + endtime + "', " + danger + ", " + warn + ")";
 
           st.executeUpdate(query);
 
