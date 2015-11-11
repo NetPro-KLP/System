@@ -56,13 +56,6 @@ public class Demultiplexer implements Runnable {
             }
         });
 
-        socket.on("protocol user statistics", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "protocol user statistics res";
-              mysqlHandler.protocolStatistics(emitTo, "user");
-            }
-        });
-
         socket.on("inoutbound week", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
               String emitTo = "inoutbound week res";
@@ -70,108 +63,10 @@ public class Demultiplexer implements Runnable {
             }
         });
 
-        socket.on("barStatistics danger", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "barStatistics danger res";
-              mysqlHandler.barStatistics(emitTo, "danger");
-            }
-        });
-
-        socket.on("barStatistics traffic", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "barStatistics traffic res";
-              mysqlHandler.barStatistics(emitTo, "traffic");
-            }
-        });
-
-        socket.on("barStatistics warn", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "barStatistics warn res";
-              mysqlHandler.barStatistics(emitTo, "warn");
-            }
-        });
-
         socket.on("barStatistics dangerWarn", new Handler<JsonObject>() {
             public void handle(JsonObject json) {
               String emitTo = "barStatistics dangerWarn res";
               mysqlHandler.barStatistics(emitTo, "dangerWarn");
-            }
-        });
-
-        socket.on("barStatistics weekDangerWarn", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-              String emitTo = "barStatistics weekDangerWarn res";
-              mysqlHandler.barStatistics(emitTo, "weekDangerWarn");
-            }
-        });
-
-        socket.on("insert", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-                String target = jsonToString(json, "data");
-
-                // insert 성공(201)
-                JsonObject reply = new JsonObject().putString("code", "201");
-                reply.putString("body", "your data was this");
-
-                // 에러날 경우
-                // 400
-                // JsonObject reply = new JsonObject().putString("code","400");
-                // reply.putString("body", "somethings were error");
-
-                socket.emit("insert res", reply);
-            }
-        });
-
-        socket.on("read", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-                String target = jsonToString(json, "data");
-
-                // read 성공
-                JsonObject reply = new JsonObject().putString("code", "200");
-                reply.putString("body", "somthings were generated");
-
-                // 에러날 경우
-                // 404: 리소스가 존재하지 않을 경우
-                // JsonObject reply = new JsonObject().putString("code","404");
-                // reply.putString("body", "your data was this");
-
-                // 400: 그 외의 에러는 에러 이유를 "body"에 삽입
-                // JsonObject reply = new JsonObject().putString("code","400");
-                // reply.putString("body", "somethings were error");
-
-                socket.emit("read res", reply);
-            }
-        });
-
-        socket.on("update", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-                String target = jsonToString(json, "data");
-
-                // update 성공
-                JsonObject reply = new JsonObject().putString("code", "200");
-                reply.putString("body", "somethings were updated");
-
-                // 에러날 경우
-                // 404: 리소스가 존재하지 않을 경우
-                // JsonObject reply = new JsonObject().putString("code","404");
-                // reply.putString("body", "your data was this");
-
-                // 400: 그 외의 에러는 에러 이유를 "body"에 삽입
-                // JsonObject reply = new JsonObject().putString("code","400");
-                // reply.putString("body", "somethings were error");
-
-                socket.emit("update res", reply);
-            }
-        });
-
-        socket.on("delete", new Handler<JsonObject>() {
-            public void handle(JsonObject json) {
-                String table = jsonToString(json, "table");
-                String key = jsonToString(json, "key");
-                String value = jsonToString(json, "value");
-
-                String emitTo = "delete res";
-                mysqlHandler.deleteHandler(emitTo, table, key, value);
             }
         });
 

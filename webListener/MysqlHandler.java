@@ -36,6 +36,8 @@ public class MysqlHandler {
   private Connection firewallConn = null;
   private boolean isConnected;
   private boolean isRealtime;
+  private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+      + "HH:mm:ss");
 
     public MysqlHandler(String host, String userId, String pw,
         SocketIOSocket socket) {
@@ -446,8 +448,6 @@ public class MysqlHandler {
                   totalbytes = rs.getDouble(2);
                   double[] data = new double[2];
 
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   Date date = dateFormat.parse(endtime);
                   long time = date.getTime() / 1000;
 
@@ -541,8 +541,6 @@ public class MysqlHandler {
 
               String preDate = null;
               JsonArray jsonArray = new JsonArray();
-              DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                  + "HH:mm:ss");
               double totalbytesEach = 0;
               double totalbytes = 0;
               String endtime = null;
@@ -926,8 +924,6 @@ public class MysqlHandler {
                       warnEachTime);
                   jsonArray.addObject(tcpObject);
 
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
 
@@ -978,8 +974,6 @@ public class MysqlHandler {
                     warnEachTime);
                 jsonArray.addObject(insertObject);
 
-                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                     + "HH:mm:ss");
                 Date date = dateFormat.parse(preDate + preTime);
                 long time = date.getTime() / 1000;
 
@@ -1035,8 +1029,6 @@ public class MysqlHandler {
                       warnEachTime);
                   jsonArray.addObject(udpObject);
 
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
 
@@ -1068,8 +1060,6 @@ public class MysqlHandler {
                     warnEachTime);
                 jsonArray.addObject(insertObject);
 
-                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                    + "HH:mm:ss");
                 Date date = dateFormat.parse(preDate + preTime);
                 long time = date.getTime() / 1000;
 
@@ -1129,8 +1119,6 @@ public class MysqlHandler {
                         warnEachTime);
                     jsonArray.addObject(tcpObject);
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
                     Date date = dateFormat.parse(preDate + preTime);
                     long time = date.getTime() / 1000;
 
@@ -1164,8 +1152,6 @@ public class MysqlHandler {
                         warnEachTime);
                     jsonArray.addObject(insertObject);
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                         + "HH:mm:ss");
                     Date date = dateFormat.parse(preDate + preTime);
                     long time = date.getTime() / 1000;
 
@@ -1227,8 +1213,6 @@ public class MysqlHandler {
                         warnEachTime);
                     jsonArray.addObject(udpObject);
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
                     Date date = dateFormat.parse(preDate + preTime);
                     long time = date.getTime() / 1000;
 
@@ -1262,8 +1246,6 @@ public class MysqlHandler {
                         warnEachTime);
                     jsonArray.addObject(insertObject);
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
                     Date date = dateFormat.parse(preDate + preTime);
                     long time = date.getTime() / 1000;
 
@@ -1320,13 +1302,13 @@ public class MysqlHandler {
               int eachUnit = 0;
               double traffic = 0;
               String endtime = null;
+              DateFormat dateFormat2 = new SimpleDateFormat("yyyy-MM-dd");
               
               while (rs.next()) {
                 eachUnit = rs.getInt(1) + rs.getInt(2);
                 endtime = (rs.getString(3)).substring(0,10);
 
-                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                Date date = dateFormat.parse(endtime);
+                Date date = dateFormat2.parse(endtime);
                 long time = date.getTime() / 1000;
 
                 Long[] data = new Long[2];
@@ -1353,8 +1335,7 @@ public class MysqlHandler {
                 endtime = (rs.getString(3)).substring(0,10);
                 
                 if (!day.equals(endtime)) {
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                  Date date = dateFormat.parse(day);
+                  Date date = dateFormat2.parse(day);
                   long time = date.getTime() / 1000;
 
                   Long[] data = new Long[2];
@@ -1400,18 +1381,10 @@ public class MysqlHandler {
               ResultSet rs = null;
               JsonObject reply = new JsonObject();
 
-              String query = null;
-
-              if (code.equals("traffic")) {
-                query = "SELECT COUNT(p.destination_port), pr.name FROM packets p "
-                  + "JOIN protocol pr JOIN users u "
-                  + "ON (p.destination_port = pr.port) AND (u.ip = p.source_ip) GROUP BY "
-                  + "pr.name ORDER BY COUNT(p.source_port) DESC";
-              } else if (code.equals("user")) {
-                query = "SELECT u.idx, p.source_port FROM packets p JOIN"
-                  + " users u ON u.ip = p.source_ip OR u.ip = p.destination_ip "
-                  + "GROUP BY u.idx, p.source_port ORDER BY u.idx DESC";
-              }
+              String query = "SELECT COUNT(p.destination_port), pr.name FROM packets p "
+                + "JOIN protocol pr JOIN users u "
+                + "ON (p.destination_port = pr.port) AND (u.ip = p.source_ip) GROUP BY "
+                + "pr.name ORDER BY COUNT(p.source_port) DESC";
 
               rs = st.executeQuery(query);
 
@@ -1420,21 +1393,15 @@ public class MysqlHandler {
 
               JsonObject userObject = new JsonObject();
               int i = 0;
+              int count = 0;
+              String protocol = null;
 
               while(rs.next()) {
                 if (i++ > 3)
                   break;
-                int count = 0;
-                String protocol = null;
 
-                if (code.equals("traffic")) {
-                  count = rs.getInt(1);
-                  protocol = rs.getString(2);
-                }
-                else if (code.equals("user")) {
-                  count = rs.getInt(1);
-                  protocol = rs.getString(2);
-                }
+                count = rs.getInt(1);
+                protocol = rs.getString(2);
 
                 reply.putNumber(protocol, count);
               }
@@ -1464,31 +1431,24 @@ public class MysqlHandler {
               ResultSet rs = null;
               JsonObject reply = new JsonObject();
 
-              String outboundQuery = null;
-              String inboundQuery = null;
-              String backupOutboundQuery = null;
-              String backupInboundQuery = null;
+              String outboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
+                + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+                + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
+                + "ORDER BY p.endtime DESC";
 
-              if (unit.equals("week")) {
-                outboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
-                  + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
-                  + "ORDER BY p.endtime DESC";
+              String inboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
+                + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+                + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
+                + "ORDER BY p.endtime DESC";
+              String backupOutboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
+                + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+                + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
+                + "ORDER BY p.endtime DESC";
 
-                inboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
-                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
-                  + "ORDER BY p.endtime DESC";
-                backupOutboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
-                  + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
-                  + "ORDER BY p.endtime DESC";
-
-                backupInboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                  + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
-                  + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
-                  + "ORDER BY p.endtime DESC";
-              }
+              String backupInboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
+                + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+                + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
+                + "ORDER BY p.endtime DESC";
 
               rs = st.executeQuery(inboundQuery);
 
@@ -1497,12 +1457,16 @@ public class MysqlHandler {
 
               String preTime = "init";
               double totalbytesEachTime = 0;
+              double totalbytes = 0;
               int dangerEachTime = 0;
+              int danger = 0;
               int warnEachTime = 0;
-              int preIdx = -1;
+              int warn = 0;
               int i = 7;
               int weekStart = 0;
               String preDate = null;
+              String starttime = null;
+              String endtime = null;
 
               JsonArray jsonArray = new JsonArray();
 
@@ -1517,18 +1481,13 @@ public class MysqlHandler {
               while (rs.next()) {
                 JsonObject inObject = new JsonObject();
 
-                int idx = 0;
-                double totalbytes = (double)rs.getFloat(1);
-                int warn = rs.getInt(2);
-                int danger = rs.getInt(3);
-                String starttime = rs.getString(4);
-                String endtime = rs.getString(5);
-
-                starttime = starttime.substring(0,19);
-                endtime = endtime.substring(0,19);
+                totalbytes = rs.getDouble(1);
+                warn = rs.getInt(2);
+                danger = rs.getInt(3);
+                starttime = (rs.getString(4)).substring(0,19);
+                endtime = (rs.getString(5)).substring(0,19);
 
                 if (unit.equals("week") && preTime.equals("init")) {
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                   Date date = dateFormat.parse(endtime);
 
                   Calendar calendar = Calendar.getInstance();
@@ -1544,12 +1503,9 @@ public class MysqlHandler {
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
-                  preIdx = idx;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
 
@@ -1567,32 +1523,29 @@ public class MysqlHandler {
               }
 
               if (!preTime.equals("init")) {
-                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                    + "HH:mm:ss");
                 Date date = dateFormat.parse(preDate + preTime);
 
-                if (unit.equals("week")) {
-                  if (weekStart == 1) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  } else if (weekStart == 2) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  }
-                  else if (weekStart == 3) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  }
-                  else if (weekStart == 4) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  }
-                  else if (weekStart == 5) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  }
-                  else if (weekStart == 6) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  }
-                  else if (weekStart == 7) {
-                    weekDate[i] = preDate + preTime.substring(0,2);
-                  }
+                if (weekStart == 1) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
+                } else if (weekStart == 2) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
                 }
+                else if (weekStart == 3) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
+                }
+                else if (weekStart == 4) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
+                }
+                else if (weekStart == 5) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
+                }
+                else if (weekStart == 6) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
+                }
+                else if (weekStart == 7) {
+                  weekDate[i] = preDate + preTime.substring(0,2);
+                }
+
                 inbound[i] = totalbytesEachTime / (1024*1024);
               }
 
@@ -1612,15 +1565,11 @@ public class MysqlHandler {
               while (rs.next()) {
                 JsonObject outObject = new JsonObject();
 
-                int idx = 0;
-                double totalbytes = (double)rs.getFloat(1);
-                int warn = rs.getInt(2);
-                int danger = rs.getInt(3);
-                String starttime = rs.getString(4);
-                String endtime = rs.getString(5);
-
-                starttime = starttime.substring(0,19);
-                endtime = endtime.substring(0,19);
+                totalbytes = rs.getDouble(1);
+                warn = rs.getInt(2);
+                danger = rs.getInt(3);
+                starttime = (rs.getString(4)).substring(0,19);
+                endtime = (rs.getString(5)).substring(0,19);
 
                 String curtime = endtime.substring(8,10) + " 00:00:00";
                 String curdate = endtime.substring(0,8);
@@ -1628,12 +1577,9 @@ public class MysqlHandler {
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
-                  preIdx = idx;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                  DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                      + "HH:mm:ss");
                   Date date = dateFormat.parse(preDate + preTime);
                   long time = date.getTime() / 1000;
 
@@ -1651,209 +1597,184 @@ public class MysqlHandler {
               }
 
               if (!preTime.equals("init")) {
-                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd " +
-                    "HH:mm:ss");
                 Date date = dateFormat.parse(preDate + preTime);
                 long time = date.getTime() / 1000;
 
-                if (unit.equals("week"))
-                  outbound[i] = -totalbytesEachTime / (1024*1024);
+                outbound[i] = -totalbytesEachTime / (1024*1024);
               }
 
-              if (unit.equals("week")) {
-                rs = st.executeQuery(backupInboundQuery);
+              rs = st.executeQuery(backupInboundQuery);
 
-                if(st.execute(backupInboundQuery))
-                  rs = st.getResultSet();
+              if(st.execute(backupInboundQuery))
+                rs = st.getResultSet();
 
-                int preWeekStart = weekStart;
-                int preI = i;
-                preTime = "init";
-                totalbytesEachTime = 0;
-                dangerEachTime = 0;
-                warnEachTime = 0;
-                preIdx = -1;
-                preDate = null;
+              int preWeekStart = weekStart;
+              int preI = i;
+              preTime = "init";
+              totalbytesEachTime = 0;
+              dangerEachTime = 0;
+              warnEachTime = 0;
+              preDate = null;
 
-                while (rs.next() && i > 0) {
-                  int idx = 0;
-                  double totalbytes = (double)rs.getFloat(1);
-                  int warn = rs.getInt(2);
-                  int danger = rs.getInt(3);
-                  String starttime = rs.getString(4);
-                  String endtime = rs.getString(5);
+              while (rs.next() && i > 0) {
+                totalbytes = rs.getDouble(1);
+                warn = rs.getInt(2);
+                danger = rs.getInt(3);
+                starttime = (rs.getString(4)).substring(0,19);
+                endtime = (rs.getString(5)).substring(0,19);
 
-                  starttime = starttime.substring(0,19);
-                  endtime = endtime.substring(0,19);
+                String curtime = endtime.substring(8,10) + " 00:00:00";
+                String curdate = endtime.substring(0,8);
 
-                  String curtime = endtime.substring(8,10) + " 00:00:00";
-                  String curdate = endtime.substring(0,8);
-
-                  if (preTime.equals("init")) {
-                    preTime = curtime;
-                    preDate = curdate;
-                    preIdx = idx;
-                  }
-
-                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    inbound[i-1] = totalbytesEachTime / (1024*1024);
-
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
-                    Date date = dateFormat.parse(preDate + preTime);
-                    long time = date.getTime() / 1000;
-
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTime(date);
-
-                    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-                    String stringDayOfWeek = null;
-
-                    if (dayOfWeek == 1)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 2)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 3)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 4)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 5)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 6)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 7)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-
-                    jsonArray = new JsonArray();
-                    totalbytesEachTime = 0;
-                    dangerEachTime = 0;
-                    warnEachTime = 0;
-                    preTime = curtime;
-                    preDate = curdate;
-                    i = i - 1;
-                  }
-
-                  totalbytesEachTime = totalbytesEachTime + totalbytes;
-                  dangerEachTime = dangerEachTime + danger;
-                  warnEachTime = warnEachTime + warn;
+                if (preTime.equals("init")) {
+                  preTime = curtime;
+                  preDate = curdate;
                 }
 
-                if (!preTime.equals("init")) {
-                  JsonObject insertObject = new JsonObject();
-                  if (i > 0) {
-                    inbound[i-1] = totalbytesEachTime / (1024*1024);
+                if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                  inbound[i-1] = totalbytesEachTime / (1024*1024);
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
-                    Date date = dateFormat.parse(preDate + preTime);
-                    long time = date.getTime() / 1000;
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
 
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTime(date);
+                  Calendar calendar = Calendar.getInstance();
+                  calendar.setTime(date);
 
-                    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-                    String stringDayOfWeek = null;
+                  int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                  String stringDayOfWeek = null;
 
-                    if (dayOfWeek == 1)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 2)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 3)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 4)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 5)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 6)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                    else if (dayOfWeek == 7)
-                      weekDate[i-1] = preDate + preTime.substring(0,2);
-                  }
+                  if (dayOfWeek == 1)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 2)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 3)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 4)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 5)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 6)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 7)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+
+                  jsonArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
+                  preTime = curtime;
+                  preDate = curdate;
+                  i = i - 1;
                 }
 
-                rs = st.executeQuery(backupOutboundQuery);
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
+              }
 
-                if(st.execute(backupOutboundQuery))
-                  rs = st.getResultSet();
+              if (!preTime.equals("init")) {
+                JsonObject insertObject = new JsonObject();
+                if (i > 0) {
+                  inbound[i-1] = totalbytesEachTime / (1024*1024);
 
-                weekStart = preWeekStart;
-                i = preI;
-                preTime = "init";
-                totalbytesEachTime = 0;
-                dangerEachTime = 0;
-                warnEachTime = 0;
-                preIdx = -1;
-                preDate = null;
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
 
-                jsonArray = new JsonArray();
+                  Calendar calendar = Calendar.getInstance();
+                  calendar.setTime(date);
 
-                while (rs.next() && i > 0) {
-                  JsonObject inObject = new JsonObject();
+                  int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                  String stringDayOfWeek = null;
 
-                  int idx = 0;
-                  double totalbytes = (double)rs.getFloat(1);
-                  int warn = rs.getInt(2);
-                  int danger = rs.getInt(3);
-                  String starttime = rs.getString(4);
-                  String endtime = rs.getString(5);
+                  if (dayOfWeek == 1)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 2)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 3)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 4)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 5)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 6)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  else if (dayOfWeek == 7)
+                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                }
+              }
 
-                  starttime = starttime.substring(0,19);
-                  endtime = endtime.substring(0,19);
+              rs = st.executeQuery(backupOutboundQuery);
 
-                  String curtime = endtime.substring(8,10) + " 00:00:00";
-                  String curdate = endtime.substring(0,8);
+              if(st.execute(backupOutboundQuery))
+                rs = st.getResultSet();
 
-                  if (preTime.equals("init")) {
-                    preTime = curtime;
-                    preDate = curdate;
-                    preIdx = idx;
-                  }
+              weekStart = preWeekStart;
+              i = preI;
+              preTime = "init";
+              totalbytesEachTime = 0;
+              dangerEachTime = 0;
+              warnEachTime = 0;
+              preDate = null;
 
-                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                    outbound[i-1] = -totalbytesEachTime / (1024*1024);
+              jsonArray = new JsonArray();
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
-                    Date date = dateFormat.parse(preDate + preTime);
-                    long time = date.getTime() / 1000;
+              while (rs.next() && i > 0) {
+                JsonObject inObject = new JsonObject();
 
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTime(date);
+                totalbytes = rs.getDouble(1);
+                warn = rs.getInt(2);
+                danger = rs.getInt(3);
+                starttime = (rs.getString(4)).substring(0,19);
+                endtime = (rs.getString(5)).substring(0,19);
 
-                    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-                    String stringDayOfWeek = null;
+                String curtime = endtime.substring(8,10) + " 00:00:00";
+                String curdate = endtime.substring(0,8);
 
-                    jsonArray = new JsonArray();
-                    totalbytesEachTime = 0;
-                    dangerEachTime = 0;
-                    warnEachTime = 0;
-                    preTime = curtime;
-                    preDate = curdate;
-                    i = i - 1;
-                  }
-
-                  totalbytesEachTime = totalbytesEachTime + totalbytes;
-                  dangerEachTime = dangerEachTime + danger;
-                  warnEachTime = warnEachTime + warn;
+                if (preTime.equals("init")) {
+                  preTime = curtime;
+                  preDate = curdate;
                 }
 
-                if (!preTime.equals("init")) {
-                  JsonObject insertObject = new JsonObject();
-                  if (i > 0) {
-                    outbound[i-1] = -totalbytesEachTime / (1024*1024);
+                if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                  outbound[i-1] = -totalbytesEachTime / (1024*1024);
 
-                    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-                        + "HH:mm:ss");
-                    Date date = dateFormat.parse(preDate + preTime);
-                    long time = date.getTime() / 1000;
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
 
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.setTime(date);
+                  Calendar calendar = Calendar.getInstance();
+                  calendar.setTime(date);
 
-                    int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-                    String stringDayOfWeek = null;
+                  int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                  String stringDayOfWeek = null;
 
-                  }
+                  jsonArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
+                  preTime = curtime;
+                  preDate = curdate;
+                  i = i - 1;
+                }
+
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
+              }
+
+              if (!preTime.equals("init")) {
+                JsonObject insertObject = new JsonObject();
+                if (i > 0) {
+                  outbound[i-1] = -totalbytesEachTime / (1024*1024);
+
+                  Date date = dateFormat.parse(preDate + preTime);
+                  long time = date.getTime() / 1000;
+
+                  Calendar calendar = Calendar.getInstance();
+                  calendar.setTime(date);
+
+                  int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+                  String stringDayOfWeek = null;
+
                 }
               }
 
@@ -1939,18 +1860,6 @@ public class MysqlHandler {
         resToWeb(emitTo, "400", "Database connection failed");
       }
     }
-/*
-    public void insertHandler() {
-      if (this.isConnected) {
-        try {
-        } catch (SQLException sqex) {
-          System.out.println("SQLException: " + sqex.getMessage());
-          System.out.println("SQLState: " + sqex.getSQLState());
-        }
-      } else {
-      }
-    }
-*/
     public void deleteHandler(String emitTo, String table, String key, String value) {
 
       if (this.isConnected) {
@@ -1972,27 +1881,5 @@ public class MysqlHandler {
         resToWeb(emitTo, "400", "Database connection failed");
       }
     }
-/*
-    public void updateHandler() {
-      if (this.isConnected) {
-        try {
-        } catch (SQLException sqex) {
-          System.out.println("SQLException: " + sqex.getMessage());
-          System.out.println("SQLState: " + sqex.getSQLState());
-        }
-      } else {
-      }
-    }
-    public void readHandler() {
-      if (this.isConnected) {
-        try {
-        } catch (SQLException sqex) {
-          System.out.println("SQLException: " + sqex.getMessage());
-          System.out.println("SQLState: " + sqex.getSQLState());
-        }
-      } else {
-      }
-    }
-*/
 }
 
