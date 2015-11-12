@@ -283,6 +283,12 @@ public class EventHandler {
           String starttime = packetAnalyzer.getStarttime();
           String endtime = packetAnalyzer.getEndtime();
 
+          System.out.println("saddr: " + saddr + ", src: " + src + ", daddr: "
+              + daddr + ", dst: " + dst + ", tcpudp: " + tcpudp + ", warn: "
+              + warn + ", danger: " + danger + ", packetCount: " + packetCount
+              + ", totalbytes: " + totalbytes + ", starttime: " + starttime
+              + ", endtime: " + endtime);
+
           long long_from_ip = 0;
           long long_to_ip = 0;
 
@@ -336,12 +342,12 @@ public class EventHandler {
           }
 
           query = "INSERT INTO `packets`(`source_ip`, `source_port`,"
-              + "`destination_ip`, `destination_port`, `protocol`, `tcpudp`,"
+              + "`destination_ip`, `destination_port`, `tcpudp`,"
               + "`packet_count`, `totalbytes`, `starttime`, `endtime`,"
-              + "`danger`, `warn`) VALUES(" + saddr + ", " + src + ", "
-              + daddr + ", " + dst + ", " + tcpudp + ", "
-              + packetCount + ", " + totalbytes + ", '" + starttime + "', '"
-              + endtime + "', " + danger + ", " + warn + ")";
+              + "`danger`, `warn`) VALUES('" + saddr + "', '" + src + "', '"
+              + daddr + "', '" + dst + "', '" + tcpudp + "', '"
+              + packetCount + "', '" + totalbytes + "', '" + starttime + "', '"
+              + endtime + "', '" + danger + "', '" + warn + "')";
 
           st.executeUpdate(query);
 
@@ -354,15 +360,15 @@ public class EventHandler {
 
           if (saddrLong >= long_from_ip && saddrLong <= long_to_ip) {
             query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
-              + "`status`) VALUES(" + saddrLong + ", '" + At + "', '" + At
-              + "', 0)";
+              + "`status`) VALUES('" + saddrLong + "', '" + At + "', '" + At
+              + "', '0')";
 
             st.executeUpdate(query);
           }
           if (daddrLong >= long_from_ip && daddrLong <= long_to_ip) {
             query = "INSERT INTO `users`(`ip`, `createdAt`, `connectedAt`, "
-              + "`status`) VALUES(" + daddrLong + ", '" + At + "', '" + At
-              + "', 0)";
+              + "`status`) VALUES('" + daddrLong + "', '" + At + "', '" + At
+              + "', '0')";
 
             st.executeUpdate(query);
           }

@@ -3,11 +3,13 @@ package firewallListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.DataInputStream;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.StringTokenizer;
 
 public class Dispatcher {
 	
@@ -17,7 +19,10 @@ public class Dispatcher {
 
     // 패킷디스패치 루프의 슬립 타입을 'ms' 단위로 지정
     private static final int PACKETDISPATCHLOOP_SLEEPTIME = 30;
-    private final int HEADER_SIZE = 4;
+    private static final int HEADER_SIZE = 50;
+    private static final int PAYLOAD_SIZE = 120;
+    private static final int HEADER_TOKEN_NUM = 4;
+    private static final int PAYLOAD_TOKEN_NUM = 13;
     private int queueNumThreads;
     private int dispatchNumThreads;
 
@@ -66,215 +71,42 @@ public class Dispatcher {
             try {
                 Socket socket = serverSocket.accept();
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-                byte swapByte;
-                byte[] expByte = new byte[3];
-                byte[] iniByte = new byte[3];
+                byte[] buffer = new byte[HEADER_SIZE];
+                dataInputStream.read(buffer);
+                String data = new String(buffer);
 
-                expByte[0] = 101;
-                expByte[1] = 120;
-                expByte[2] = 112;
-
-                String expString = new String(expByte);
-
-                System.out.println("FUCKU");
-
-                byte[] firewallIpByte = new byte[4];
-                if (dataInputStream.read(firewallIpByte, 0,
-                      firewallIpByte.length) == -1)
-                  System.out.println("firewallIp read error!");
-
-                //String firewallIpString = new String(firewallIpByte);
-                //long firewallIp = Long.parseLong(firewallIpString);
-                long firewallIp = addrToLong(firewallIpByte);
-
-                //System.out.println(firewallIp);
-                System.out.println("firewallIpByte");
-                System.out.println(firewallIpByte[0] & 0xff);
-                System.out.println(firewallIpByte[1] & 0xff);
-                System.out.println(firewallIpByte[2] & 0xff);
-                System.out.println(firewallIpByte[3] & 0xff);
-
-                byte[] rowNumByte = new byte[4];
-                if (dataInputStream.read(rowNumByte, 0, rowNumByte.length) ==
-                    -1)
-                  System.out.println("rowNum read error!");
-
-                String rowNumString = new String(rowNumByte);
-                swapByte = rowNumByte[0];
-                rowNumByte[0] = rowNumByte[3];
-                rowNumByte[3] = swapByte;
-                swapByte = rowNumByte[1];
-                rowNumByte[1] = rowNumByte[2];
-                rowNumByte[2] = swapByte;
-                int rowNum = byteToInt(rowNumByte);
-                //int rowNum = Integer.parseInt(rowNumString);
-
-                //System.out.println(rowNum);
+                String[] params = new String[HEADER_TOKEN_NUM];
+                StringTokenizer token = new StringTokenizer(data, "|");
                 
-                System.out.println("rowNumByte");
-                System.out.println(rowNumByte[0] & 0xff);
-                System.out.println(rowNumByte[1] & 0xff);
-                System.out.println(rowNumByte[2] & 0xff);
-                System.out.println(rowNumByte[3] & 0xff);
+                int i = 0;
 
-                byte[] codeBuffer = new byte[4];
-                if (dataInputStream.read(codeBuffer, 0, codeBuffer.length) ==
-                    -1)
-                  System.out.println("code read error!");
+                while (token.hasMoreTokens()) {
+                  params[i++] = token.nextToken();
+                }
 
-                /*
-                byte[] codeByte = new byte[4];
-                codeByte[0] = (codeBuffer[0] & 0xff)*100 + (codeBuffer[1] &
-                    0xff)*10 + (codeBuffer[2] & 0xff);
-                codeByte[1] = (codeBuffer[3] & 0xff)*100 + (codeBuffer[4] &
-                    0xff)*10 + (codeBuffer[5] & 0xff);
-                codeByte[2] = (codeBufer[6] & 0xff)*100 + (codeBuffer[7] &
-                    0xff)*10 + (codeBuffer[8]);*/
+                System.out.println("received header: " + data);
 
-                String code = new String(codeBuffer);
-                System.out.println("code: " + code);
+                long firewallIp = Long.parseLong(params[0]);
+                int rowNum = Integer.parseInt(params[1]);
+                String code = params[2];
 
-                System.out.println("codeBuffer");
-                System.out.println(codeBuffer[0] & 0xff);
-                System.out.println(codeBuffer[1] & 0xff);
-                System.out.println(codeBuffer[2] & 0xff);
-                System.out.println(codeBuffer[3] & 0xff);
-
-                for (int i = 0; i < rowNum; i++) {
+                for (i = 0; i < rowNum; i++) {
                   if (code.equals("ini")) {
                     QueueListenedInfo queueListenedInfo = new QueueListenedInfo(
                         firewallIp, code);
                     queue.offer(queueListenedInfo);
-                  } else if (code.equals(expString) || code.equals("alm")) {
-                    byte[] saddrByte = new byte[4];
-                    if (dataInputStream.read(saddrByte, 0, saddrByte.length) ==
-                        -1)
-                      System.out.println("saddr read error!");
+                  } else if (code.equals("exp") || code.equals("alm")) {
+                    buffer = new byte[PAYLOAD_SIZE];
+                    dataInputStream.read(buffer);
+                    data = new String(buffer);
 
-                    long saddr = addrToLong(saddrByte);
-
-                    System.out.println("saddrByte");
-                    System.out.println(saddrByte[0] & 0xff);
-                    System.out.println(saddrByte[1] & 0xff);
-                    System.out.println(saddrByte[2] & 0xff);
-                    System.out.println(saddrByte[3] & 0xff);
-
-                    byte[] srcByte = new byte[2];
-                    dataInputStream.read(srcByte, 0, srcByte.length);
-                    String src = Integer.toString((srcByte[0] & 0xff) << 8 |
-                        (srcByte[1] & 0xff));
-
-                    System.out.println("srcInt: " + src);
-
-                    System.out.println("srcByte");
-                    System.out.println(srcByte[0] & 0xff);
-                    System.out.println(srcByte[1] & 0xff);
-
-                    byte[] daddrByte = new byte[4];
-                    dataInputStream.read(daddrByte, 0, daddrByte.length);
-                    long daddr = addrToLong(daddrByte);
-
-                    System.out.println("daddrByte");
-                    System.out.println(daddrByte[0] & 0xff);
-                    System.out.println(daddrByte[1] & 0xff);
-                    System.out.println(daddrByte[2] & 0xff);
-                    System.out.println(daddrByte[3] & 0xff);
-
-                    byte[] dstByte = new byte[2];
-                    dataInputStream.read(dstByte, 0, dstByte.length);
-                    String dst = Integer.toString((dstByte[0] & 0xff) << 8 |
-                        (dstByte[1] & 0xff));
-
-                    System.out.println("dstInt: " + dst);
-
-                    System.out.println("dstByte");
-                    System.out.println(dstByte[0] & 0xff);
-                    System.out.println(dstByte[1] & 0xff);
-
-                    byte[] tcpudpByte = new byte[1];
-                    dataInputStream.read(tcpudpByte, 0, tcpudpByte.length);
-                    int tcpudp = tcpudpByte[0] & 0xff;
-
-                    System.out.println("tcpudpByte");
-                    System.out.println(tcpudpByte[0] & 0xff);
-
-                    byte[] warnByte = new byte[4];
-                    dataInputStream.read(warnByte, 0, warnByte.length);
-                    int warn = byteToInt(warnByte);
-
-                    System.out.println("warnByte");
-                    System.out.println(warnByte[0] & 0xff);
-                    System.out.println(warnByte[1] & 0xff);
-                    System.out.println(warnByte[2] & 0xff);
-                    System.out.println(warnByte[3] & 0xff);
-
-                    byte[] dangerByte = new byte[4];
-                    dataInputStream.read(dangerByte, 0, dangerByte.length);
-                    int danger = byteToInt(dangerByte);
-
-                    System.out.println("dangerByte");
-                    System.out.println(dangerByte[0] & 0xff);
-                    System.out.println(dangerByte[1] & 0xff);
-                    System.out.println(dangerByte[2] & 0xff);
-                    System.out.println(dangerByte[3] & 0xff);
-
-                    byte[] packetCountByte = new byte[4];
-                    dataInputStream.read(packetCountByte, 0, packetCountByte.length);
-                    swapByte = packetCountByte[0];
-                    packetCountByte[0] = packetCountByte[3];
-                    packetCountByte[3] = swapByte;
-                    swapByte = packetCountByte[2];
-                    packetCountByte[2] = packetCountByte[1];
-                    packetCountByte[1] = swapByte;
-
-                    int packetCount = byteToInt(packetCountByte);
-
-                    System.out.println("packetCountByte");
-                    System.out.println(packetCountByte[0] & 0xff);
-                    System.out.println(packetCountByte[1] & 0xff);
-                    System.out.println(packetCountByte[2] & 0xff);
-                    System.out.println(packetCountByte[3] & 0xff);
-
-                    byte[] totalbytesByte = new byte[4];
-                    dataInputStream.read(totalbytesByte, 0,
-                       totalbytesByte.length);
-                    swapByte = totalbytesByte[0];
-                    totalbytesByte[0] = totalbytesByte[3];
-                    totalbytesByte[3] = swapByte;
-                    swapByte = totalbytesByte[1];
-                    totalbytesByte[1] = totalbytesByte[2];
-                    totalbytesByte[2] = swapByte;
-
-                    int totalbytes = byteToInt(totalbytesByte);
-
-                    System.out.println("totalbytesByte");
-                    System.out.println(totalbytesByte[0] & 0xff);
-                    System.out.println(totalbytesByte[1] & 0xff);
-                    System.out.println(totalbytesByte[2] & 0xff);
-                    System.out.println(totalbytesByte[3] & 0xff);
-
-                    byte[] starttimeByte = new byte[19];
-                    dataInputStream.read(starttimeByte, 0, starttimeByte.length);
-                    String starttime = new String(starttimeByte);
-
-                    System.out.println(starttimeByte.toString());
-
-                    byte[] endtimeByte = new byte[19];
-                    dataInputStream.read(endtimeByte, 0, endtimeByte.length);
-                    String endtime = new String(endtimeByte);
-
-                    System.out.println(endtimeByte.toString());
+                    System.out.println("payload: " + data);
 
                     QueueListenedInfo queueListenedInfo = null;
-                    String packet = saddr + "|" + src + "|" + daddr
-                        + "|" + dst + "|" + tcpudp + "|" + warn
-                        + "|" + danger + "|" + packetCount + "|" + totalbytes
-                        + "|" + starttime + "|" + endtime;
 
-                    System.out.println("packet: " + packet);
-                    if (code.equals(expString)) {
+                    if (code.equals("exp")) {
                       queueListenedInfo = new QueueListenedInfo (
-                          firewallIp, code + "|" + packet);
+                          firewallIp, code, data);
                       queue.offer(queueListenedInfo);
                     } else {
                       byte[] nameByte = new byte[100];
@@ -294,15 +126,14 @@ public class Dispatcher {
                       String createdAt = new String(createdAtByte);
 
                       queueListenedInfo = new QueueListenedInfo (
-                          socket, firewallIp, code, packet + "|" + name + "|" +
+                          socket, firewallIp, code, data + "|" + name + "|" +
                           hazard + "|" + payload + "|" + createdAt);
                     }
                   }
                 }
-              if (code.equals(expString)) {
-                socket.close();
-                System.out.println("socket closed");
-              }
+                
+                if (code.equals("exp"))
+                  socket.close();
 
             } catch (IOException e) {
                 e.printStackTrace();

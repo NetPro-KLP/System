@@ -25,14 +25,8 @@ public class PacketAnalyzer {
 
     public PacketAnalyzer (String code, String packet) {
         StringTokenizer token = new StringTokenizer(packet, "|");
-        byte[] expByte = new byte[4];
-        expByte[0] = 101;
-        expByte[1] = 120;
-        expByte[2] = 112;
 
-        String expString = new String(expByte);
-
-        if (code.equals(expString) || code.equals("alm")) {
+        if (code.equals("exp") || code.equals("alm")) {
           if (token.hasMoreTokens())
               this.saddr = token.nextToken();
           if (token.hasMoreTokens())
@@ -57,6 +51,8 @@ public class PacketAnalyzer {
               this.endtime = token.nextToken();
 
           if (code.equals("alm")) {
+            if (token.hasMoreTokens())
+                token.nextToken();
             if (token.hasMoreTokens())
                 this.name = token.nextToken();
             if (token.hasMoreTokens())

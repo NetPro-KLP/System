@@ -28,21 +28,14 @@ public class Demultiplexer implements Runnable {
                 "root", "klpsoma123");
 
             PacketAnalyzer packetAnalyzer = null;
-            byte[] expByte = new byte[4];
-            expByte[0] = 101;
-            expByte[1] = 120;
-            expByte[2] = 112;
-
-            String expString = new String(expByte);
-
-            if(code.equals(expString)) {
-              packetAnalyzer = new PacketAnalyzer(code, this.packet);
-              eventHandler.expiredEvent(packetAnalyzer);
-            }
 
             switch(code) {
                 case "ini":
                     eventHandler.initEvent(socket);
+                    break;
+                case "exp":
+                    packetAnalyzer = new PacketAnalyzer(code, this.packet);
+                    eventHandler.expiredEvent(packetAnalyzer);
                     break;
                 case "alm":
                     packetAnalyzer = new PacketAnalyzer(code, this.packet);
