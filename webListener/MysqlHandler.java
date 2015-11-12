@@ -1481,7 +1481,6 @@ public class MysqlHandler {
                 rs = st.getResultSet();
 
               String preTime = "init";
-              long time = 0;
               double totalbytesEachTime = 0;
               double totalbytes = 0;
               int dangerEachTime = 0;
@@ -1489,8 +1488,6 @@ public class MysqlHandler {
               int warnEachTime = 0;
               int warn = 0;
               int i = 7;
-              int weekStart = 0;
-              int dayOfWeek = 0;
               String starttime = null;
               String endtime = null;
               String preDate = null;
@@ -1506,28 +1503,16 @@ public class MysqlHandler {
                 starttime = (rs.getString(4)).substring(0,19);
                 endtime = (rs.getString(5)).substring(0,19);
 
-                if (unit.equals("week") && preTime.equals("init")) {
-                  date = dateFormat.parse(endtime);
-
-                  Calendar calendar = Calendar.getInstance();
-                  calendar.setTime(date);
-                  weekStart = calendar.get(Calendar.DAY_OF_WEEK);
-
-                  i = i - 1;
-                }
-
                 String curtime = endtime.substring(8,10) + " 00:00:00";
                 String curdate = endtime.substring(0,8);
 
                 if (preTime.equals("init")) {
                   preTime = curtime;
                   preDate = curdate;
+                  i = i - 1;
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
                   totalbytesEachTime = 0;
                   dangerEachTime = 0;
                   warnEachTime = 0;
@@ -1542,28 +1527,7 @@ public class MysqlHandler {
 
               if (!preTime.equals("init")) {
                 date = dateFormat.parse(preDate + preTime);
-
-                if (weekStart == 1) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                } else if (weekStart == 2) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                }
-                else if (weekStart == 3) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                }
-                else if (weekStart == 4) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                }
-                else if (weekStart == 5) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                }
-                else if (weekStart == 6) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                }
-                else if (weekStart == 7) {
-                  weekDate[i] = preDate + preTime.substring(0,2);
-                }
-
+                weekDate[i] = preDate + preTime.substring(0,2);
                 inbound[i] = totalbytesEachTime / (1024*1024);
               }
 
@@ -1596,9 +1560,6 @@ public class MysqlHandler {
                 }
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
                   totalbytesEachTime = 0;
                   dangerEachTime = 0;
                   warnEachTime = 0;
@@ -1611,19 +1572,14 @@ public class MysqlHandler {
                 warnEachTime = warnEachTime + warn;
               }
 
-              if (!preTime.equals("init")) {
-                date = dateFormat.parse(preDate + preTime);
-                time = date.getTime() / 1000;
-
+              if (!preTime.equals("init"))
                 outbound[i] = -totalbytesEachTime / (1024*1024);
-              }
 
               rs = st.executeQuery(backupInboundQuery);
 
               if(st.execute(backupInboundQuery))
                 rs = st.getResultSet();
 
-              int preWeekStart = weekStart;
               int preI = i;
               preTime = "init";
               totalbytesEachTime = 0;
@@ -1648,29 +1604,7 @@ public class MysqlHandler {
 
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
                   inbound[i-1] = totalbytesEachTime / (1024*1024);
-
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
-                  Calendar calendar = Calendar.getInstance();
-                  calendar.setTime(date);
-
-                  dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-
-                  if (dayOfWeek == 1)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 2)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 3)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 4)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 5)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 6)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 7)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  weekDate[i-1] = preDate + preTime.substring(0,2);
 
                   totalbytesEachTime = 0;
                   dangerEachTime = 0;
@@ -1689,29 +1623,7 @@ public class MysqlHandler {
                 JsonObject insertObject = new JsonObject();
                 if (i > 0) {
                   inbound[i-1] = totalbytesEachTime / (1024*1024);
-
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
-                  Calendar calendar = Calendar.getInstance();
-                  calendar.setTime(date);
-
-                  dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-
-                  if (dayOfWeek == 1)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 2)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 3)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 4)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 5)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 6)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
-                  else if (dayOfWeek == 7)
-                    weekDate[i-1] = preDate + preTime.substring(0,2);
+                  weekDate[i-1] = preDate + preTime.substring(0,2);
                 }
               }
 
@@ -1720,7 +1632,6 @@ public class MysqlHandler {
               if(st.execute(backupOutboundQuery))
                 rs = st.getResultSet();
 
-              weekStart = preWeekStart;
               i = preI;
               preTime = "init";
               totalbytesEachTime = 0;
@@ -1746,14 +1657,6 @@ public class MysqlHandler {
                 if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
                   outbound[i-1] = -totalbytesEachTime / (1024*1024);
 
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
-                  Calendar calendar = Calendar.getInstance();
-                  calendar.setTime(date);
-
-                  dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-
                   totalbytesEachTime = 0;
                   dangerEachTime = 0;
                   warnEachTime = 0;
@@ -1769,17 +1672,8 @@ public class MysqlHandler {
 
               if (!preTime.equals("init")) {
                 JsonObject insertObject = new JsonObject();
-                if (i > 0) {
+                if (i > 0)
                   outbound[i-1] = -totalbytesEachTime / (1024*1024);
-
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
-                  Calendar calendar = Calendar.getInstance();
-                  calendar.setTime(date);
-
-                  dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-                }
               }
 
               JsonArray jsonArray = new JsonArray();
