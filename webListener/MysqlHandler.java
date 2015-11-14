@@ -430,7 +430,6 @@ public class MysqlHandler {
                   if (rs.next()) {
                     String current = (rs.getString(1)).substring(0,11)
                       + "00:00:00";
-                    reply.putString("fuck", current);
 
                     trafficQuery = "SELECT u.idx, u.ip, u.status, p.endtime"
                       + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"

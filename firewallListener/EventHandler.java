@@ -37,14 +37,14 @@ public class EventHandler {
       while (!this.isConnected) {
         try {
           this.firewallConn = DriverManager.getConnection("jdbc:mysql://"
-              + host + "/KLP-Firewall", userId, pw);
+                  + host + "/KLP-Firewall", userId, pw);
           this.isConnected = true;
         } catch (SQLException sqex) {
           System.out.println("SQLException: " + sqex.getMessage());
           System.out.println("SQLState: " + sqex.getSQLState());
           try {
             Thread.sleep(100);
-          } catch(InterruptedException e) {
+          } catch (InterruptedException e) {
             e.printStackTrace();
           }
         }
@@ -63,8 +63,21 @@ public class EventHandler {
               Queue<String> blacklistCopyQueue = null;
               Queue<String> blacklistCurCopyQueue = null;
 
+              boolean isSame = true;
+              String existData = null;
+              String curData = null;
+              String diff = null;
+              String header = null;
+              String payload = null;
+              long from_ip = 0;
+              long to_ip = 0;
+              int insertNum = 0;
+/*
+              Socket firewallSocket = new Socket("172.16.101.12", 30001);
+              OutputStream outputStream = firewallSocket.getOutputStream();*/
+
               String query = "SELECT country_code FROM GeoIP_Blacklist ORDER BY "
-                + "country_code DESC";
+                + "createdAt ASC";
 
               rs = st.executeQuery(query);
 
@@ -76,12 +89,10 @@ public class EventHandler {
               }
 
               while (isConnected) {
-                /*Socket firewallSocket = new Socket("172.16.101.12", 30001);
-                OutputStream outputStream = firewallSocket.getOutputStream(); */
                 blacklistCurQueue = new LinkedList<String>();
 
                 query = "SELECT country_code FROM GeoIP_Blacklist ORDER BY "
-                  + "country_code DESC";
+                  + "createdAt ASC";
 
                 rs = st.executeQuery(query);
 
@@ -96,20 +107,83 @@ public class EventHandler {
                 blacklistCurCopyQueue = new
                   LinkedList<String>(blacklistCurQueue);
 
-                boolean isSame = true;
+                isSame = true;
                 while (true) {
-                  String existData = blacklistCopyQueue.poll();
-                  if (existData == null)
+                  existData = blacklistCopyQueue.poll();
+                  if (existData == null) {
+                    // 추가된 경우
+                    if (blacklistCurCopyQueue.size() >= 1) {
+                      isSame = false;
+                      diff = "add";
+                    }
                     break;
+                  }
 
-                  if (!existData.equals(blacklistCurCopyQueue.poll())) {
+                  curData = blacklistCurCopyQueue.poll();
+
+                  // 삭제된 경우
+                  if (curData == null) {
                     isSame = false;
+                    diff = "del";
+                    break;
+                  }
+
+                  if (!existData.equals(curData)) {
+                    isSame = false;
+                    diff = "strange";
                     break;
                   }
                 }
 
                 if (!isSame) {
-                  System.out.println("FUCKFUCKFUCK U!!!!!!!!!");
+                  if (diff.equals("add")) {
+                    while (true) {
+                      curData = blacklistCurCopyQueue.poll();
+
+                      if(curData == null)
+                        break;
+                      else {
+                        query = "SELECT from_ip_int, to_ip_int FROM GeoIP WHERE "
+                          + "country_code = '" + curData + "'";
+
+                        rs = st.executeQuery(query);
+
+                        if (st.execute(query))
+                          rs = st.getResultSet();
+
+                        rs.last();
+                        insertNum = rs.getRow();
+                        rs.beforeFirst();
+
+                        header = "geo|" + Integer.toString(insertNum);
+                        //outputStream.write(header.getBytes());
+
+                        while (rs.next()) {
+                          from_ip = rs.getLong(1);
+                          to_ip = rs.getLong(2);
+                          payload = Long.toString(from_ip) + "|" + Long.toString(to_ip);
+                          //outputStream.write(header.getBytes());
+                        }
+                      }
+                    }
+                  } else if (diff.equals("del")) {
+                    header = "grm|0";
+                    //outputStream.write(header.getBytes());
+                    //outputStream.write(existData.getBytes());
+                    while (true) {
+                      existData = blacklistCopyQueue.poll();
+
+                      if(existData == null)
+                        break;
+                      else {
+                        header = "grm|0";
+                        //outputStream.write(existData.getBytes());
+                      }
+                    }
+                  } else {
+                    System.out.println("strange");
+                  }
+
                   blacklistQueue = blacklistCurQueue;
                 }
             
