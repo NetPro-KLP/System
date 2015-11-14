@@ -409,14 +409,16 @@ public class MysqlHandler {
                   totalDangerEachUser = totalDangerEachUser + danger;
                 }
 
-                trafficObject = new JsonObject().putNumber("totalbytes",
-                  totalbytesEachUser);
-                trafficObject.putNumber("totalwarn", totalWarnEachUser);
-                trafficObject.putNumber("totaldanger",
-                  totalDangerEachUser);
+                if (preIdx != -1) {
+                  trafficObject = new JsonObject().putNumber("totalbytes",
+                    totalbytesEachUser);
+                  trafficObject.putNumber("totalwarn", totalWarnEachUser);
+                  trafficObject.putNumber("totaldanger",
+                    totalDangerEachUser);
 
-                trafficArray.addObject(trafficObject);
-                reply.putArray(Integer.toString(preIdx), trafficArray);
+                  trafficArray.addObject(trafficObject);
+                  reply.putArray(Integer.toString(preIdx), trafficArray);
+                }
 
                 rs = st.executeQuery(realtimeQuery);
 

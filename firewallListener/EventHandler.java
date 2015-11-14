@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 
 import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 
 import java.io.OutputStream;
 import java.io.DataOutputStream;
@@ -138,13 +139,26 @@ public class EventHandler {
               java.sql.Statement st = firewallConn.createStatement();
               ResultSet rs = null;
 
-              SimpleDateFormat simpleDateFormat = null;
+              DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
               Date date = null;
-              String currentDate = null;
 
-              String query = "SELECT source_ip, source_port, destination_ip, "
-                + "destination_port, tcpudp, packet_count, totalbytes, starttime, "
-                + "endtime, danger, warn FROM packets ORDER BY endtime ASC";
+              String query = "SELECT remove_packet FROM system WHERE 1";
+              String packetQuery = null;
+              String timeString = null;
+              String deleteQuery = null;
+              String insertQuery = null;
+
+              long source_ip = 0;
+              String source_port = null;
+              long destination_ip = 0;
+              String destination_port = null;
+              int tcpudp = 0;
+              int packet_count = 0;
+              int totalbytes = 0;
+              String starttime = null;
+              String endtime = null;
+              int danger = 0;
+              int warn = 0;
 
               while(isConnected) {
                 rs = st.executeQuery(query);
@@ -153,30 +167,36 @@ public class EventHandler {
                   rs = st.getResultSet();
 
                 while (rs.next()) {
-                  String endtime = rs.getString(9);
-                  endtime = endtime.substring(0,10);
-
-                  simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
                   date = new Date();
-                  currentDate = simpleDateFormat.format(date);
+                  date = new Date((date.getTime()/1000) - rs.getLong(1));
+                  timeString = df.format(date);
 
-                  if (endtime.equals(currentDate))
-                    break;
-                  else {
-                        try {
-                        long source_ip = rs.getLong(1);
-                        String source_port = rs.getString(2);
-                        long destination_ip = rs.getLong(3);
-                        String destination_port = rs.getString(4);
-                        int tcpudp = rs.getInt(5);
-                        int packet_count = rs.getInt(6);
-                        int totalbytes = rs.getInt(7);
-                        String starttime = (rs.getString(8)).substring(0,19);
+                  packetQuery = "SELECT source_ip, source_port, destination_ip, "
+                    + "destination_port, tcpudp, packet_count, totalbytes, starttime, "
+                    + "endtime, danger, warn FROM packets WHERE endtime <= '"
+                    + timeString + "' ORDER BY endtime ASC";
+
+                  java.sql.Statement st2 = firewallConn.createStatement();
+                  rs = st2.executeQuery(packetQuery);
+
+                  if(st2.execute(packetQuery))
+                    rs = st2.getResultSet();
+
+                  while (rs.next()) {
+                      try {
+                        source_ip = rs.getLong(1);
+                        source_port = rs.getString(2);
+                        destination_ip = rs.getLong(3);
+                        destination_port = rs.getString(4);
+                        tcpudp = rs.getInt(5);
+                        packet_count = rs.getInt(6);
+                        totalbytes = rs.getInt(7);
+                        starttime = (rs.getString(8)).substring(0,19);
                         endtime = (rs.getString(9)).substring(0,19);
-                        int danger = rs.getInt(10);
-                        int warn = rs.getInt(11);
+                        danger = rs.getInt(10);
+                        warn = rs.getInt(11);
 
-                        String deleteQuery = "DELETE FROM `packets` WHERE source_ip = '"
+                        deleteQuery = "DELETE FROM `packets` WHERE source_ip = '"
                           + source_ip + "' AND source_port = '" + source_port + "'"
                           + " AND destination_ip = '" + destination_ip + "' AND "
                           + "destination_port = '" + destination_port + "' AND tcpudp = '"
@@ -188,7 +208,7 @@ public class EventHandler {
                         java.sql.Statement updateSt = firewallConn.createStatement();
                         updateSt.executeUpdate(deleteQuery);
 
-                        String insertQuery = "INSERT INTO `backup_packets`(`source_i"
+                        insertQuery = "INSERT INTO `backup_packets`(`source_i"
                           + "p`, `source_port`, `destination_ip`, `destination_port`"
                           + ", `tcpudp`, `packet_count`, `totalbytes`, `starttime`, "
                           + "`endtime`, `danger`, `warn`) VALUES(" + source_ip + ", "
@@ -199,12 +219,11 @@ public class EventHandler {
                           + ")";
 
                         updateSt.executeUpdate(insertQuery);
-                        } catch (SQLException sqex) {
-                          System.out.println("SQLExeption: " + sqex.getMessage());
-                          System.out.println("SQLState: " + sqex.getSQLState());
-                        }
+                      } catch (SQLException sqex) {
+                        System.out.println("SQLExeption: " + sqex.getMessage());
+                        System.out.println("SQLState: " + sqex.getSQLState());
+                      }
                   }
-
                 }
 
                 try {

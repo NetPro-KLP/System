@@ -13,7 +13,6 @@ public class Demultiplexer implements Runnable {
     private String packet;
 	
 	public Demultiplexer(QueueListenedInfo receivedInfo) {
-        //this.socket = receivedInfo.getSocket();
         this.firewallIp = receivedInfo.getFirewallIp();
         this.code = receivedInfo.getCode();
         if (this.code.equals("exp")) {
@@ -23,31 +22,25 @@ public class Demultiplexer implements Runnable {
 	
 	public void run() {
 
-        try {
-            EventHandler eventHandler = new EventHandler("localhost",
-                "root", "klpsoma123");
+        EventHandler eventHandler = new EventHandler("localhost",
+            "root", "klpsoma123");
 
-            PacketAnalyzer packetAnalyzer = null;
+        PacketAnalyzer packetAnalyzer = null;
 
-            switch(code) {
-                case "ini":
-                    eventHandler.initEvent(socket);
-                    break;
-                case "exp":
-                    packetAnalyzer = new PacketAnalyzer(code, this.packet);
-                    eventHandler.expiredEvent(packetAnalyzer);
-                    break;
-                case "alm":
-                    packetAnalyzer = new PacketAnalyzer(code, this.packet);
-                    eventHandler.alarmEvent(packetAnalyzer);
-                    break;
-                default:
-                    break;
-            }
-
-            this.socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        switch(code) {
+            case "ini":
+                eventHandler.initEvent(socket);
+                break;
+            case "exp":
+                packetAnalyzer = new PacketAnalyzer(code, this.packet);
+                eventHandler.expiredEvent(packetAnalyzer);
+                break;
+            case "alm":
+                packetAnalyzer = new PacketAnalyzer(code, this.packet);
+                eventHandler.alarmEvent(packetAnalyzer);
+                break;
+            default:
+                break;
         }
 	}
 }
