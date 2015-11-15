@@ -51,6 +51,48 @@ public class EventHandler {
       }
     }
 
+    public void checkBanUser() {
+        if (this.isConnected) {
+            Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        java.sql.Statement st = firewallConn.createStatement();
+                        ResultSet rs = null;
+                        String query = "SELECT ip FROM users WHERE status = 1";
+
+                        Queue<Long> banUserIpQueue = new LinkedList<Long>();
+                        Queue<Long> banUserIpCopyQueue = null;
+                        Queue<Long> banUserIpCurQueue = null;
+                        Queue<Long> banUserIpCurCopyQueue = null;
+
+                        rs = st.executeQuery(query);
+
+                        if(st.execute(query))
+                            rs = st.getResultSet();
+
+                        while(rs.next()) {
+                            banUserIpQueue.offer(rs.getLong(1));
+                        }
+
+                        while(isConnected) {
+                            banUserIpCopyQueue = new LinkedList<Long>(banUserIpQueue);
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } catch (SQLException sqex) {
+                        System.out.println("SQLException: " + sqex.getMessage());
+                        System.out.println("SQLState: " + sqex.getSQLState());
+                    }
+                }
+            };
+
+            thread.start();
+        } else {}
+    }
+
     public void checkGeoipBlacklist() {
       if (this.isConnected) {
         Thread thread = new Thread() {
@@ -439,7 +481,7 @@ public class EventHandler {
             }
           }
 
-          query = "SELECT ip FROM users WHER status = 1";
+          query = "SELECT ip FROM users WHERE status = 1";
 
           rs = st.executeQuery(query);
 
