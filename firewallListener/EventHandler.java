@@ -143,7 +143,7 @@ public class EventHandler {
                       if(curData == null)
                         break;
                       else {
-                        query = "SELECT from_ip_int, to_ip_int FROM GeoIP WHERE "
+                        query = "SELECT DISTINCT from_ip_int, to_ip_int FROM GeoIP WHERE "
                           + "country_code = '" + curData + "'";
 
                         rs = st.executeQuery(query);
@@ -155,29 +155,28 @@ public class EventHandler {
                         insertNum = rs.getRow();
                         rs.beforeFirst();
 
-                        header = "geo|" + Integer.toString(insertNum);
+                        header = "geo|" + curData + "|" + Integer.toString(insertNum);
                         //outputStream.write(header.getBytes());
 
                         while (rs.next()) {
                           from_ip = rs.getLong(1);
                           to_ip = rs.getLong(2);
                           payload = Long.toString(from_ip) + "|" + Long.toString(to_ip);
-                          //outputStream.write(header.getBytes());
+                          //outputStream.write(payload.getBytes());
                         }
                       }
                     }
                   } else if (diff.equals("del")) {
-                    header = "grm|0";
+                    header = "grm|" + existData;
                     //outputStream.write(header.getBytes());
-                    //outputStream.write(existData.getBytes());
                     while (true) {
                       existData = blacklistCopyQueue.poll();
 
                       if(existData == null)
                         break;
                       else {
-                        header = "grm|0";
-                        //outputStream.write(existData.getBytes());
+                        header = "grm|" + existData;
+                        //outputStream.write(header.getBytes());
                       }
                     }
                   } else {
@@ -196,7 +195,9 @@ public class EventHandler {
             } catch (SQLException sqex) {
               System.out.println("SQLExeption: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
-            }
+            } /*catch (IOException e) {
+              e.printStackTrace();
+            }*/
           }
         };
 
@@ -326,6 +327,7 @@ public class EventHandler {
           st = this.firewallConn.createStatement();
           ResultSet rs = null;
 
+          OutputStream outputStream = socket.getOutputStream();
           String query = "SELECT data FROM rules_data WHERE 1";
 
           rs = st.executeQuery(query);
@@ -333,20 +335,126 @@ public class EventHandler {
           if(st.execute(query))
             rs = st.getResultSet();
 
-          rs.last();
-          int rulesNum = rs.getRow();
-          rs.beforeFirst();
+          boolean isShap = false;
+          int contentPattern = 0;
+          int outPattern = 0;
+          int outPattern2 = 0;
+          int outPattern3 = 0;
+          int outPattern4 = 0;
+          int outPattern5 = 0;
+          int outPattern6 = 0;
+          int outPattern7 = 0;
+          int outPattern8 = 0;
+          int outPattern9 = 0;
+          int outPattern10 = 0;
+          int rowNum = 0;
+          long from_ip = 0;
+          long to_ip = 0;
 
-          OutputStream outputStream = socket.getOutputStream();
-          byte[] rulesNumByte = ByteBuffer.allocate(4).putInt(rulesNum).array();
-          outputStream.write(rulesNumByte);
+          Queue<String> ruleset = new LinkedList<String>();
+          Queue<String> country_code = new LinkedList<String>();
+          Queue<Long> users_ip = new LinkedList<Long>();
+          StringTokenizer token = null;
+          String country = null;
+          String header = null;
+          String payload = null;
 
           while(rs.next()) {
             String rule = rs.getString(1);
-            
-            byte[] ruleLengthByte = ByteBuffer.allocate(4).putInt(rule.length()).array();
-            outputStream.write(ruleLengthByte);
-            outputStream.write(rule.getBytes());
+            isShap = false;
+            if (rule.substring(0,1).equals("#"))
+              isShap = true;
+
+            contentPattern = rule.indexOf("content");
+            rule = rule.substring(contentPattern + 8, rule.length());
+            token = new StringTokenizer(rule, ";");
+            if (token.hasMoreTokens())
+              rule = token.nextToken();
+
+            outPattern = rule.indexOf("|");
+            outPattern2 = rule.indexOf("{");
+            outPattern3 = rule.indexOf("tcp");
+            outPattern4 = rule.indexOf("udp");
+            outPattern5 = rule.indexOf("msg:");
+            outPattern6 = rule.indexOf("POST");
+            outPattern7 = rule.indexOf("GET");
+            outPattern8 = rule.indexOf("UPDATE");
+            outPattern9 = rule.indexOf("X-Forwarded-For");
+            outPattern10 = rule.indexOf("SIP/2.0");
+
+            if (outPattern >= 0 || outPattern2 >= 0 || outPattern3 >= 0
+                    || outPattern4 >= 0 || outPattern5 >= 0 || outPattern6 >= 0
+                    || outPattern7 >= 0 || outPattern8 >= 0 || outPattern9 >= 0
+                    || outPattern10 >= 0) {}
+            else {
+              rule = rule.substring(1, rule.length() - 1);
+              if (isShap)
+                ruleset.offer(rule + "|0");
+              else
+                ruleset.offer(rule + "|1");
+            }
+          }/*
+          outputStream.write(("rul|" + Integer.toString(ruleset.size())).getBytes());
+          while(ruleset.peek() != null) {
+            outputStream.write((ruleset.poll()).getBytes());
+          }*/
+
+          query = "SELECT country_code FROM GeoIP_Blacklist WHERE 1";
+
+          rs = st.executeQuery(query);
+
+          if(st.execute(query))
+            rs = st.getResultSet();
+
+          while(rs.next()) {
+            country_code.offer(rs.getString(1));
+          }
+
+          header = "geo|" + Integer.toString(country_code.size());
+          //outputStream.write(header.getBytes());
+
+          while(country_code.peek() != null) {
+            country = country_code.poll();
+            query = "SELECT DISTINCT from_ip_int, to_ip_int FROM GeoIP WHERE "
+                    + "country_code = '" + country + "'";
+
+            rs = st.executeQuery(query);
+
+            if (st.execute(query))
+              rs = st.getResultSet();
+
+            rs.last();
+            rowNum = rs.getRow();
+            rs.beforeFirst();
+
+            header = "geo|" + country + "|" + Integer.toString(rowNum);
+            //outputStream.write(header.getBytes());
+
+            while(rs.next()) {
+              from_ip = rs.getLong(1);
+              to_ip = rs.getLong(2);
+
+              payload = Long.toString(from_ip) + "|" + Long.toString(to_ip);
+              //outputStream.write(payload.getBytes());
+            }
+          }
+
+          query = "SELECT ip FROM users WHER status = 1";
+
+          rs = st.executeQuery(query);
+
+          if(st.execute(query))
+            rs = st.getResultSet();
+
+          while(rs.next()) {
+            users_ip.offer(rs.getLong(1));
+          }
+
+          header = "ban|" + Integer.toString(users_ip.size());
+
+          while(users_ip.peek() != null) {
+            payload = Long.toString(users_ip.poll());
+            //outputStream.write(payload.getBytes());
           }
 
         } catch (SQLException sqex) {
@@ -355,7 +463,6 @@ public class EventHandler {
         } catch (IOException e) {
           e.printStackTrace();
         }
-
       } else {
       }
     }
