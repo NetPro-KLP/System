@@ -353,7 +353,6 @@ public class EventHandler {
 
           Queue<String> ruleset = new LinkedList<String>();
           Queue<String> country_code = new LinkedList<String>();
-          Queue<Long> users_ip = new LinkedList<Long>();
           StringTokenizer token = null;
           String country = null;
           String header = null;
@@ -394,7 +393,8 @@ public class EventHandler {
                 ruleset.offer(rule + "|1");
             }
           }/*
-          outputStream.write(("rul|" + Integer.toString(ruleset.size())).getBytes());
+          header = "rul|" + Integer.toString(ruleset.size());
+          outputStream.write(header.getBytes());
           while(ruleset.peek() != null) {
             outputStream.write((ruleset.poll()).getBytes());
           }*/
@@ -446,14 +446,15 @@ public class EventHandler {
           if(st.execute(query))
             rs = st.getResultSet();
 
+          rs.last();
+          rowNum = rs.getRow();
+          rs.beforeFirst();
+
+          header = "ban|" + Integer.toString(rowNum);
+          //outputStream.write(header.getBytes());
+
           while(rs.next()) {
-            users_ip.offer(rs.getLong(1));
-          }
-
-          header = "ban|" + Integer.toString(users_ip.size());
-
-          while(users_ip.peek() != null) {
-            payload = Long.toString(users_ip.poll());
+            payload = Long.toString(rs.getLong(1));
             //outputStream.write(payload.getBytes());
           }
 
