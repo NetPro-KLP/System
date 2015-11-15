@@ -52,45 +52,133 @@ public class EventHandler {
     }
 
     public void checkBanUser() {
-        if (this.isConnected) {
-            Thread thread = new Thread() {
-                public void run() {
-                    try {
-                        java.sql.Statement st = firewallConn.createStatement();
-                        ResultSet rs = null;
-                        String query = "SELECT ip FROM users WHERE status = 1";
+      if (this.isConnected) {
+        Thread thread = new Thread() {
+          public void run() {
+            try {
+              java.sql.Statement st = firewallConn.createStatement();
+              ResultSet rs = null;
+              String query = "SELECT ip FROM users WHERE status = 1 ORDER BY "
+                      + "createdAt ASC";
 
-                        Queue<Long> banUserIpQueue = new LinkedList<Long>();
-                        Queue<Long> banUserIpCopyQueue = null;
-                        Queue<Long> banUserIpCurQueue = null;
-                        Queue<Long> banUserIpCurCopyQueue = null;
+              Queue<Long> banUserIpQueue = new LinkedList<Long>();
+              Queue<Long> banUserIpCopyQueue = null;
+              Queue<Long> banUserIpCurQueue = null;
+              Queue<Long> banUserIpCurCopyQueue = null;
 
-                        rs = st.executeQuery(query);
+              boolean isSame = true;
+              Long existData;
+              Long curData;
+              String diff = null;
+              String header = null;
+              String payload = null;
 
-                        if(st.execute(query))
-                            rs = st.getResultSet();
+              rs = st.executeQuery(query);
 
-                        while(rs.next()) {
-                            banUserIpQueue.offer(rs.getLong(1));
-                        }
+              if(st.execute(query))
+                rs = st.getResultSet();
 
-                        while(isConnected) {
-                            banUserIpCopyQueue = new LinkedList<Long>(banUserIpQueue);
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    } catch (SQLException sqex) {
-                        System.out.println("SQLException: " + sqex.getMessage());
-                        System.out.println("SQLState: " + sqex.getSQLState());
-                    }
+              while(rs.next()) {
+                banUserIpQueue.offer(rs.getLong(1));
+              }
+
+              while(isConnected) {
+                banUserIpCopyQueue = new LinkedList<Long>(banUserIpQueue);
+                banUserIpCurQueue = new LinkedList<Long>();
+
+                query = "SELECT ip FROM users WHERE status = 1 ORDER BY "
+                        + "createdAt ASC";
+
+                rs = st.executeQuery(query);
+
+                if(st.execute(query))
+                  rs = st.getResultSet();
+
+                while(rs.next()) {
+                  banUserIpCurQueue.offer(rs.getLong(1));
                 }
-            };
 
-            thread.start();
-        } else {}
+                banUserIpCurCopyQueue = new LinkedList<Long>(banUserIpCurQueue);
+
+                isSame = true;
+                while (true) {
+                  existData = banUserIpCopyQueue.poll();
+                  if (existData == null) {
+                    // 추가된 경우
+                    if (banUserIpCurCopyQueue.size() >= 1) {
+                      isSame = false;
+                      diff = "add";
+                    }
+                    break;
+                  }
+
+                  curData = banUserIpCurCopyQueue.poll();
+
+                  // 삭제된 경우
+                  if (curData == null) {
+                    isSame = false;
+                    diff = "del";
+                    break;
+                  }
+
+                  if (!existData.equals(curData)) {
+                    isSame = false;
+                    diff = "strange";
+                    break;
+                  }
+                }
+
+                if (!isSame) {
+                  if (diff.equals("add")) {
+                    header = "usr|" + banUserIpCurCopyQueue.size();
+                    //outputStream.write(header.getBytes());
+
+                    while (true) {
+                      curData = banUserIpCurCopyQueue.poll();
+
+                      if (curData == null)
+                        break;
+                      else {
+                        payload = Long.toString(curData);
+                        //outputStream.write(payload);
+                      }
+                    }
+                  } else if (diff.equals("del")) {
+                    header = "urm|" + Integer.toString(banUserIpCopyQueue.size() + 1);
+                    //outputStream.write(header.getBytes());
+                    payload = Long.toString(existData);
+                    //outputStream.write(payload.getbytes());
+
+                    while (true) {
+                      existData = banUserIpCopyQueue.poll();
+
+                      if (existData == null)
+                        break;
+                      else {
+                        payload = Long.toString(existData);
+                        //outputStream.write(payload.getBytes());
+                      }
+                    }
+                  } else {
+                    System.out.println("strange");
+                  }
+                }
+
+                try {
+                  Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                  e.printStackTrace();
+                }
+              }
+            } catch (SQLException sqex) {
+              System.out.println("SQLException: " + sqex.getMessage());
+              System.out.println("SQLState: " + sqex.getSQLState());
+            }
+          }
+        };
+
+        thread.start();
+      } else {}
     }
 
     public void checkGeoipBlacklist() {

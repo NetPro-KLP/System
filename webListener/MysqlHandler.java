@@ -621,6 +621,7 @@ public class MysqlHandler {
               JsonArray jsonArray = new JsonArray();
               double totalbytesEach = 0;
               double totalbytes = 0;
+              double unitTotalbytes = 0;
               String endtime = null;
               long time = 0;
 
@@ -638,6 +639,7 @@ public class MysqlHandler {
                   double[] array = new double[2];
                   array[0] = (double)time;
                   array[1] = totalbytesEach;
+                  unitTotalbytes = unitTotalbytes + totalbytesEach;
                   jsonArray.add(array);
 
                   preDate = endtime;
@@ -652,9 +654,13 @@ public class MysqlHandler {
                 time = date.getTime() / 1000;
 
                 double[] array = new double[2];
+                double[] array2 = new double[1];
                 array[0] = (double)time;
                 array[1] = totalbytesEach;
+                unitTotalbytes = unitTotalbytes + totalbytesEach;
+                array2[0] = unitTotalbytes;
                 jsonArray.add(array);
+                jsonArray.add(array2);
                 reply.putArray("todayTcp", jsonArray);
               }
 
@@ -666,6 +672,7 @@ public class MysqlHandler {
               preDate = null;
               jsonArray = new JsonArray();
               totalbytesEach = 0;
+              unitTotalbytes = 0;
               time = 0;
 
               while (rs.next()) {
@@ -682,6 +689,7 @@ public class MysqlHandler {
                   double[] array = new double[2];
                   array[0] = (double)time;
                   array[1] = totalbytesEach;
+                  unitTotalbytes = unitTotalbytes + totalbytesEach;
                   jsonArray.add(array);
 
                   preDate = endtime;
@@ -696,9 +704,13 @@ public class MysqlHandler {
                 time = date.getTime() / 1000;
 
                 double[] array = new double[2];
+                double[] array2 = new double[1];
                 array[0] = (double)time;
                 array[1] = totalbytesEach;
+                unitTotalbytes = unitTotalbytes + totalbytesEach;
+                array2[0] = unitTotalbytes;
                 jsonArray.add(array);
+                jsonArray.add(array2);
                 reply.putArray("todayUdp", jsonArray);
               }
 
@@ -710,6 +722,7 @@ public class MysqlHandler {
               preDate = null;
               jsonArray = new JsonArray();
               totalbytesEach = 0;
+              unitTotalbytes = 0;
               time = 0;
 
               while (rs.next()) {
@@ -726,6 +739,7 @@ public class MysqlHandler {
                   double[] array = new double[2];
                   array[0] = (double)time;
                   array[1] = totalbytesEach;
+                  unitTotalbytes = unitTotalbytes + totalbytesEach;
                   jsonArray.add(array);
 
                   preDate = endtime;
@@ -740,9 +754,13 @@ public class MysqlHandler {
                 time = date.getTime() / 1000;
 
                 double[] array = new double[2];
+                double[] array2 = new double[1];
                 array[0] = (double)time;
                 array[1] = totalbytesEach;
+                unitTotalbytes = unitTotalbytes + totalbytesEach;
+                array2[0] = unitTotalbytes;
                 jsonArray.add(array);
+                jsonArray.add(array2);
                 reply.putArray("yesterdayTcp", jsonArray);
               }
 
@@ -754,6 +772,7 @@ public class MysqlHandler {
               preDate = null;
               jsonArray = new JsonArray();
               totalbytesEach = 0;
+              unitTotalbytes = 0;
               time = 0;
 
               while (rs.next()) {
@@ -770,6 +789,7 @@ public class MysqlHandler {
                   double[] array = new double[2];
                   array[0] = (double)time;
                   array[1] = totalbytesEach;
+                  unitTotalbytes = unitTotalbytes + totalbytesEach;
                   jsonArray.add(array);
 
                   preDate = endtime;
@@ -784,9 +804,13 @@ public class MysqlHandler {
                 time = date.getTime() / 1000;
 
                 double[] array = new double[2];
+                double[] array2 = new double[1];
                 array[0] = (double)time;
                 array[1] = totalbytesEach;
+                unitTotalbytes = unitTotalbytes + totalbytesEach;
+                array2[0] = unitTotalbytes;
                 jsonArray.add(array);
+                jsonArray.add(array2);
                 reply.putArray("yesterdayUdp", jsonArray);
               }
 
@@ -798,6 +822,7 @@ public class MysqlHandler {
               preDate = null;
               jsonArray = new JsonArray();
               totalbytesEach = 0;
+              unitTotalbytes = 0;
               time = 0;
 
               while (rs.next()) {
@@ -814,6 +839,7 @@ public class MysqlHandler {
                   double[] array = new double[2];
                   array[0] = (double)time;
                   array[1] = totalbytesEach;
+                  unitTotalbytes = unitTotalbytes + totalbytesEach;
                   jsonArray.add(array);
 
                   preDate = endtime;
@@ -830,6 +856,7 @@ public class MysqlHandler {
                 double[] array = new double[2];
                 array[0] = (double)time;
                 array[1] = totalbytesEach;
+                unitTotalbytes = unitTotalbytes + totalbytesEach;
                 jsonArray.add(array);
               }
 
@@ -845,9 +872,13 @@ public class MysqlHandler {
                 time = date.getTime() / 1000;
 
                 double[] array = new double[2];
+                double[] array2 = new double[1];
                 array[0] = (double)time;
-                array[1] = totalbytesEach;
+                array[1] = totalbytes;
+                unitTotalbytes = unitTotalbytes + totalbytes;
+                array2[0] = unitTotalbytes;
                 jsonArray.add(array);
+                jsonArray.add(array2);
                 reply.putArray("thisMonthTcp", jsonArray);
               }
 
@@ -859,6 +890,7 @@ public class MysqlHandler {
               preDate = null;
               jsonArray = new JsonArray();
               totalbytesEach = 0;
+              unitTotalbytes = 0;
               time = 0;
 
               while (rs.next()) {
@@ -875,6 +907,7 @@ public class MysqlHandler {
                   double[] array = new double[2];
                   array[0] = (double)time;
                   array[1] = totalbytesEach;
+                  unitTotalbytes = unitTotalbytes + totalbytesEach;
                   jsonArray.add(array);
 
                   preDate = endtime;
@@ -891,6 +924,7 @@ public class MysqlHandler {
                 double[] array = new double[2];
                 array[0] = (double)time;
                 array[1] = totalbytesEach;
+                unitTotalbytes = unitTotalbytes + totalbytesEach;
                 jsonArray.add(array);
               }
 
@@ -906,9 +940,13 @@ public class MysqlHandler {
                 time = date.getTime() / 1000;
 
                 double[] array = new double[2];
+                double[] array2 = new double[1];
                 array[0] = (double)time;
-                array[1] = totalbytesEach;
+                array[1] = totalbytes;
+                unitTotalbytes = unitTotalbytes + totalbytes;
+                array2[0] = unitTotalbytes;
                 jsonArray.add(array);
+                jsonArray.add(array2);
                 reply.putArray("thisMonthUdp", jsonArray);
               }
               
