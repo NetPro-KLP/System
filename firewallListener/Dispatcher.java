@@ -80,7 +80,7 @@ public class Dispatcher {
                 
                 int i = 0;
 
-                while (token.hasMoreTokens()) {
+                while (token.hasMoreTokens() && i < 4) {
                   params[i++] = token.nextToken();
                 }
 

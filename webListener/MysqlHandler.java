@@ -32,9 +32,6 @@ public class MysqlHandler {
   private SocketIOSocket socket;
   private Connection firewallConn = null;
   private boolean isConnected;
-  private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
-      + "HH:mm:ss");
-  private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public MysqlHandler(String host, String userId, String pw,
         SocketIOSocket socket) {
@@ -361,6 +358,8 @@ public class MysqlHandler {
                 int danger = 0;
                 int cnt = 0;
                 String endtime = null;
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                        + "HH:mm:ss");
 
                 while(rs.next()) {
                   idx = rs.getInt(1);
@@ -571,6 +570,7 @@ public class MysqlHandler {
             try {
               java.sql.Statement st = getSt();
               JsonObject reply = new JsonObject();
+              SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
               Date date = new Date();
               String today = sdf.format(date);
               today = today.substring(0,11) + "00:00:00";
@@ -624,6 +624,8 @@ public class MysqlHandler {
               double unitTotalbytes = 0;
               String endtime = null;
               long time = 0;
+              DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
 
               while (rs.next()) {
                 totalbytes = rs.getDouble(1);
@@ -1003,6 +1005,9 @@ public class MysqlHandler {
               String endtime = null;
               String preDate = null;
               Date date = null;
+              DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
+              SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
               JsonArray jsonArray = new JsonArray();
               JsonObject jsonGroup = new JsonObject();
@@ -1034,14 +1039,6 @@ public class MysqlHandler {
                       totalbytesEachTime);
                   jsonArray.addObject(tcpObject);
 
-                  tcpObject = new JsonObject().putNumber("totaldanger",
-                      dangerEachTime);
-                  jsonArray.addObject(tcpObject);
-
-                  tcpObject = new JsonObject().putNumber("totalwarn",
-                      warnEachTime);
-                  jsonArray.addObject(tcpObject);
-
                   date = dateFormat.parse(preDate + preTime);
                   time = date.getTime() / 1000;
 
@@ -1066,14 +1063,6 @@ public class MysqlHandler {
                     totalbytesEachTime);
                 jsonArray.addObject(insertObject);
 
-                insertObject = new JsonObject().putNumber("totaldanger",
-                    dangerEachTime);
-                jsonArray.addObject(insertObject);
-
-                insertObject = new JsonObject().putNumber("totalwarn",
-                    warnEachTime);
-                jsonArray.addObject(insertObject);
-
                 date = dateFormat.parse(preDate + preTime);
                 time = date.getTime() / 1000;
 
@@ -1081,6 +1070,75 @@ public class MysqlHandler {
 
                 reply.putObject("tcpTraffic", jsonGroup);
                 unitCnt = unitCnt + 1;
+              }
+
+              rs = st.executeQuery(barUdpQuery);
+
+              if(st.execute(barUdpQuery))
+                  rs = st.getResultSet();
+
+              preTime = "init";
+              totalbytesEachTime = 0;
+              dangerEachTime = 0;
+              warnEachTime = 0;
+              preDate = null;
+
+              jsonArray = new JsonArray();
+              jsonGroup = new JsonObject();
+
+              while (rs.next()) {
+                JsonObject udpObject = new JsonObject();
+
+                starttime = rs.getString(1);
+                endtime = rs.getString(2);
+                totalbytes = rs.getDouble(3);
+                danger = rs.getInt(4);
+                warn = rs.getInt(5);
+
+                starttime = starttime.substring(0,19);
+                endtime = endtime.substring(0,19);
+
+                String curTime = endtime.substring(11,13) + ":00:00";
+                String curDate = endtime.substring(0,11);
+
+                if (preTime.equals("init")) {
+                  preTime = curTime;
+                  preDate = curDate;
+                }
+
+                if (!preTime.equals(curTime) || !preDate.equals(curDate)) {
+                  udpObject = new JsonObject().putNumber("totalbytes",
+                          totalbytesEachTime);
+                  jsonArray.addObject(udpObject);
+
+                  date = dateFormat.parse(preDate + preTime);
+                  time = date.getTime() / 1000;
+
+                  jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                  jsonArray = new JsonArray();
+                  totalbytesEachTime = 0;
+                  dangerEachTime = 0;
+                  warnEachTime = 0;
+                  preTime = curTime;
+                  preDate = curDate;
+                }
+
+                totalbytesEachTime = totalbytesEachTime + totalbytes;
+                dangerEachTime = dangerEachTime + danger;
+                warnEachTime = warnEachTime + warn;
+              }
+
+              if (!preTime.equals("init")) {
+                JsonObject insertObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachTime);
+                jsonArray.addObject(insertObject);
+
+                date = dateFormat.parse(preDate + preTime);
+                time = date.getTime() / 1000;
+
+                jsonGroup.putArray(Long.toString(time), jsonArray);
+                reply.putObject("udpTraffic", jsonGroup);
               }
 
               if (unitCnt < 24) {
@@ -1099,9 +1157,11 @@ public class MysqlHandler {
                   + "(tcpudp = 1) AND (endtime >= '" + yesterday + "') GROUP"
                   + " BY endtime ORDER BY endtime DESC";
 
-                rs = st.executeQuery(barUdpQuery);
+                int preUnitCnt = unitCnt;
 
-                if(st.execute(barUdpQuery))
+                rs = st.executeQuery(backupTcpQuery);
+
+                if(st.execute(backupTcpQuery))
                   rs = st.getResultSet();
 
                 preTime = "init";
@@ -1113,7 +1173,85 @@ public class MysqlHandler {
                 jsonArray = new JsonArray();
                 jsonGroup = new JsonObject();
 
-                while (rs.next()) {
+                while (rs.next() && unitCnt < 24) {
+                  JsonObject tcpObject = new JsonObject();
+
+                  starttime = rs.getString(1);
+                  endtime = rs.getString(2);
+                  totalbytes = rs.getDouble(3);
+                  danger = rs.getInt(4);
+                  warn = rs.getInt(5);
+
+                  starttime = starttime.substring(0,19);
+                  endtime = endtime.substring(0,19);
+
+                  String curtime = endtime.substring(11,13) + ":00:00";
+                  String curdate = endtime.substring(0,11);
+
+                  if (preTime.equals("init")) {
+                    preTime = curtime;
+                    preDate = curdate;
+                  }
+
+                  if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
+                    tcpObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachTime);
+                    jsonArray.addObject(tcpObject);
+
+                    date = dateFormat.parse(preDate + preTime);
+                    time = date.getTime() / 1000;
+
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
+
+                    jsonArray = new JsonArray();
+                    unitCnt = unitCnt + 1;
+                    totalbytesEachTime = 0;
+                    dangerEachTime = 0;
+                    warnEachTime = 0;
+                    preTime = curtime;
+                    preDate = curdate;
+                  }
+
+                  totalbytesEachTime = totalbytesEachTime + totalbytes;
+                  dangerEachTime = dangerEachTime + danger;
+                  warnEachTime = warnEachTime + warn;
+                }
+
+                if (!preTime.equals("init") && unitCnt <= 24) {
+                  if (unitCnt != 24) {
+                    JsonObject insertObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachTime);
+                    jsonArray.addObject(insertObject);
+
+                    date = dateFormat.parse(preDate + preTime);
+                    time = date.getTime() / 1000;
+
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
+                  }
+
+                  JsonObject preGroup = reply.getObject("tcpTraffic");
+                  preGroup.mergeIn(jsonGroup);
+                  reply.removeField("tcpTraffic");
+                  reply.putObject("tcpTraffic", preGroup);
+                }
+
+                unitCnt = preUnitCnt;
+
+                rs = st.executeQuery(backupUdpQuery);
+
+                if(st.execute(backupUdpQuery))
+                  rs = st.getResultSet();
+
+                preTime = "init";
+                totalbytesEachTime = 0;
+                dangerEachTime = 0;
+                warnEachTime = 0;
+                preDate = null;
+
+                jsonArray = new JsonArray();
+                jsonGroup = new JsonObject();
+
+                while (rs.next() && unitCnt < 24) {
                   JsonObject udpObject = new JsonObject();
 
                   starttime = rs.getString(1);
@@ -1138,20 +1276,13 @@ public class MysqlHandler {
                         totalbytesEachTime);
                     jsonArray.addObject(udpObject);
 
-                    udpObject = new JsonObject().putNumber("totaldanger",
-                        dangerEachTime);
-                    jsonArray.addObject(udpObject);
-
-                    udpObject = new JsonObject().putNumber("totalwarn",
-                        warnEachTime);
-                    jsonArray.addObject(udpObject);
-
                     date = dateFormat.parse(preDate + preTime);
                     time = date.getTime() / 1000;
 
                     jsonGroup.putArray(Long.toString(time), jsonArray);
 
                     jsonArray = new JsonArray();
+                    unitCnt = unitCnt + 1;
                     totalbytesEachTime = 0;
                     dangerEachTime = 0;
                     warnEachTime = 0;
@@ -1164,216 +1295,22 @@ public class MysqlHandler {
                   warnEachTime = warnEachTime + warn;
                 }
 
-                if (!preTime.equals("init")) {
-                  JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
-                      totalbytesEachTime);
-                  jsonArray.addObject(insertObject);
+                if (!preTime.equals("init") && unitCnt <= 24) {
+                  if (unitCnt != 24) {
+                    JsonObject insertObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachTime);
+                    jsonArray.addObject(insertObject);
 
-                  insertObject = new JsonObject().putNumber("totaldanger",
-                      dangerEachTime);
-                  jsonArray.addObject(insertObject);
+                    date = dateFormat.parse(preDate + preTime);
+                    time = date.getTime() / 1000;
 
-                  insertObject = new JsonObject().putNumber("totalwarn",
-                      warnEachTime);
-                  jsonArray.addObject(insertObject);
-
-                  date = dateFormat.parse(preDate + preTime);
-                  time = date.getTime() / 1000;
-
-                  jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                  if (code.equals("traffic"))
-                    reply.putObject("udpTraffic", jsonGroup);
-                }
-
-                if (unitCnt < 24) {
-                  int preUnitCnt = unitCnt;
-
-                  rs = st.executeQuery(backupTcpQuery);
-
-                  if(st.execute(backupTcpQuery))
-                    rs = st.getResultSet();
-
-                  preTime = "init";
-                  totalbytesEachTime = 0;
-                  dangerEachTime = 0;
-                  warnEachTime = 0;
-                  preDate = null;
-
-                  jsonArray = new JsonArray();
-                  jsonGroup = new JsonObject();
-
-                  while (rs.next() && unitCnt < 24) {
-                    JsonObject tcpObject = new JsonObject();
-
-                    starttime = rs.getString(1);
-                    endtime = rs.getString(2);
-                    totalbytes = rs.getDouble(3);
-                    danger = rs.getInt(4);
-                    warn = rs.getInt(5);
-
-                    starttime = starttime.substring(0,19);
-                    endtime = endtime.substring(0,19);
-
-                    String curtime = endtime.substring(11,13) + ":00:00";
-                    String curdate = endtime.substring(0,11);
-
-                    if (preTime.equals("init")) {
-                      preTime = curtime;
-                      preDate = curdate;
-                    }
-
-                    if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                      tcpObject = new JsonObject().putNumber("totalbytes",
-                          totalbytesEachTime);
-                      jsonArray.addObject(tcpObject);
-
-                      tcpObject = new JsonObject().putNumber("totaldanger",
-                          dangerEachTime);
-                      jsonArray.addObject(tcpObject);
-
-                      tcpObject = new JsonObject().putNumber("totalwarn",
-                          warnEachTime);
-                      jsonArray.addObject(tcpObject);
-
-                      date = dateFormat.parse(preDate + preTime);
-                      time = date.getTime() / 1000;
-
-                      jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                      jsonArray = new JsonArray();
-                      unitCnt = unitCnt + 1;
-                      totalbytesEachTime = 0;
-                      dangerEachTime = 0;
-                      warnEachTime = 0;
-                      preTime = curtime;
-                      preDate = curdate;
-                    }
-
-                    totalbytesEachTime = totalbytesEachTime + totalbytes;
-                    dangerEachTime = dangerEachTime + danger;
-                    warnEachTime = warnEachTime + warn;
+                    jsonGroup.putArray(Long.toString(time), jsonArray);
                   }
 
-                  if (!preTime.equals("init") && unitCnt <= 24) {
-                    if (unitCnt != 24) {
-                      JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
-                          totalbytesEachTime);
-                      jsonArray.addObject(insertObject);
-
-                      insertObject = new JsonObject().putNumber("totaldanger",
-                          dangerEachTime);
-                      jsonArray.addObject(insertObject);
-
-                      insertObject = new JsonObject().putNumber("totalwarn",
-                          warnEachTime);
-                      jsonArray.addObject(insertObject);
-
-                      date = dateFormat.parse(preDate + preTime);
-                      time = date.getTime() / 1000;
-
-                      jsonGroup.putArray(Long.toString(time), jsonArray);
-                    }
-
-                    JsonObject preGroup = reply.getObject("tcpTraffic");
-                    preGroup.mergeIn(jsonGroup);
-                    reply.removeField("tcpTraffic");
-                    reply.putObject("tcpTraffic", preGroup);
-                  }
-
-                  unitCnt = preUnitCnt;
-
-                  rs = st.executeQuery(backupUdpQuery);
-
-                  if(st.execute(backupUdpQuery))
-                    rs = st.getResultSet();
-
-                  preTime = "init";
-                  totalbytesEachTime = 0;
-                  dangerEachTime = 0;
-                  warnEachTime = 0;
-                  preDate = null;
-
-                  jsonArray = new JsonArray();
-                  jsonGroup = new JsonObject();
-
-                  while (rs.next() && unitCnt < 24) {
-                    JsonObject udpObject = new JsonObject();
-
-                    starttime = rs.getString(1);
-                    endtime = rs.getString(2);
-                    totalbytes = rs.getDouble(3);
-                    danger = rs.getInt(4);
-                    warn = rs.getInt(5);
-
-                    starttime = starttime.substring(0,19);
-                    endtime = endtime.substring(0,19);
-
-                    String curtime = endtime.substring(11,13) + ":00:00";
-                    String curdate = endtime.substring(0,11);
-
-                    if (preTime.equals("init")) {
-                      preTime = curtime;
-                      preDate = curdate;
-                    }
-
-                    if (!preTime.equals(curtime) || !preDate.equals(curdate)) {
-                      udpObject = new JsonObject().putNumber("totalbytes",
-                          totalbytesEachTime);
-                      jsonArray.addObject(udpObject);
-
-                      udpObject = new JsonObject().putNumber("totaldanger",
-                          dangerEachTime);
-                      jsonArray.addObject(udpObject);
-
-                      udpObject = new JsonObject().putNumber("totalwarn",
-                          warnEachTime);
-                      jsonArray.addObject(udpObject);
-
-                      date = dateFormat.parse(preDate + preTime);
-                      time = date.getTime() / 1000;
-
-                      jsonGroup.putArray(Long.toString(time), jsonArray);
-
-                      jsonArray = new JsonArray();
-                      unitCnt = unitCnt + 1;
-                      totalbytesEachTime = 0;
-                      dangerEachTime = 0;
-                      warnEachTime = 0;
-                      preTime = curtime;
-                      preDate = curdate;
-                    }
-
-                    totalbytesEachTime = totalbytesEachTime + totalbytes;
-                    dangerEachTime = dangerEachTime + danger;
-                    warnEachTime = warnEachTime + warn;
-                  }
-
-                  if (!preTime.equals("init") && unitCnt <= 24) {
-                    if (unitCnt != 24) {
-                      JsonObject insertObject = new JsonObject().putNumber("totalbytes", 
-                          totalbytesEachTime);
-                      jsonArray.addObject(insertObject);
-
-                      insertObject = new JsonObject().putNumber("totaldanger",
-                          dangerEachTime);
-                      jsonArray.addObject(insertObject);
-
-                      insertObject = new JsonObject().putNumber("totalwarn",
-                          warnEachTime);
-                      jsonArray.addObject(insertObject);
-
-                      date = dateFormat.parse(preDate + preTime);
-                      time = date.getTime() / 1000;
-
-                      jsonGroup.putArray(Long.toString(time), jsonArray);
-                    }
-
-                    JsonObject preGroup = reply.getObject("udpTraffic");
-                    preGroup.mergeIn(jsonGroup);
-                    reply.removeField("udpTraffic");
-                    reply.putObject("udpTraffic", preGroup);
-                  }
+                  JsonObject preGroup = reply.getObject("udpTraffic");
+                  preGroup.mergeIn(jsonGroup);
+                  reply.removeField("udpTraffic");
+                  reply.putObject("udpTraffic", preGroup);
                 }
               }
 
@@ -1407,6 +1344,7 @@ public class MysqlHandler {
               JsonArray jsonArray = new JsonArray();
 
               Date date = new Date();
+              SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
               date = new Date(date.getTime() - ((long)(1000*60*60*24*6)));
               String week = sdf.format(date);
               week = week.substring(0,11) + "00:00:00";
@@ -1572,6 +1510,7 @@ public class MysqlHandler {
               JsonObject reply = new JsonObject();
 
               Date date = new Date();
+              SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
               date = new Date(date.getTime() - ((long)(1000*60*60*24*6)));
               String week = sdf.format(date);
               week = week.substring(0,11) + "00:00:00";
@@ -1611,6 +1550,8 @@ public class MysqlHandler {
               String starttime = null;
               String endtime = null;
               String preDate = null;
+              DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
+                      + "HH:mm:ss");
 
               String[] weekDate = new String[7];
               double[] inbound = new double[7];
@@ -1645,7 +1586,7 @@ public class MysqlHandler {
                 warnEachTime = warnEachTime + warn;
               }
 
-              if (!preTime.equals("init")) {
+              if (!preTime.equals("init") && preDate != null) {
                 date = dateFormat.parse(preDate + preTime);
                 weekDate[i] = preDate + preTime.substring(0,2);
                 inbound[i] = totalbytesEachTime / (1024*1024);
@@ -1739,7 +1680,7 @@ public class MysqlHandler {
                 warnEachTime = warnEachTime + warn;
               }
 
-              if (!preTime.equals("init")) {
+              if (!preTime.equals("init") && preDate != null) {
                 JsonObject insertObject = new JsonObject();
                 if (i > 0) {
                   inbound[i-1] = totalbytesEachTime / (1024*1024);
