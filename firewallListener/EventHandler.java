@@ -622,6 +622,8 @@ public class EventHandler {
 
           long long_from_ip = 0;
           long long_to_ip = 0;
+          long saddrLong = Long.parseLong(saddr);
+          long daddrLong = Long.parseLong(daddr);
 
           java.sql.Statement st = null;
           st = this.firewallConn.createStatement();
@@ -682,9 +684,6 @@ public class EventHandler {
 
           st.executeUpdate(query);
 
-          Long saddrLong = Long.parseLong(saddr);
-          Long daddrLong = Long.parseLong(daddr);
-
           Date curtime = new Date();
           SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
           String At = sdf.format(curtime);
@@ -712,15 +711,17 @@ public class EventHandler {
           if(st.execute(query))
             rs = st.getResultSet();
 
+          java.sql.Statement st2 = this.firewallConn.createStatement();
+          ResultSet rs2 = st2.executeQuery(query);
+          String country_code = null;
+          String country = null;
+
           while(rs.next()) {
-            String country_code = rs.getString(1);
-            String country = rs.getString(2);
+            country_code = rs.getString(1);
+            country = rs.getString(2);
 
             query = "SELECT country_code FROM GeoIP_Traffic WHERE country_code"
               + " = '" + country_code + "'";
-
-            java.sql.Statement st2 = this.firewallConn.createStatement();
-            ResultSet rs2 = st2.executeQuery(query);
 
             if(st2.execute(query))
               rs2 = st2.getResultSet();

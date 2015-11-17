@@ -330,9 +330,6 @@ public class MysqlHandler {
               + " OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime"
               + " ORDER BY u.idx, p.endtime DESC";
 
-            String realtimeQuery = "SELECT endtime, SUM(totalbytes) FROM "
-              + "packets GROUP BY endtime ORDER BY endtime DESC";
-
             try {
                 JsonObject reply = new JsonObject();
                 JsonArray trafficArray = new JsonArray();
@@ -502,49 +499,6 @@ public class MysqlHandler {
                   }
                 }
 
-                rs = st.executeQuery(realtimeQuery);
-
-                if(st.execute(realtimeQuery))
-                  rs = st.getResultSet();
-
-                cnt = 0;
-                trafficArray = new JsonArray();
-                double first = 0;
-                Date javatime = new Date();
-                DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH"
-                    + ":mm:ss");
-
-                String curTimeString = (df.format(javatime)).substring(0,19);
-                Date curTimeDate = df.parse(curTimeString);
-                long curTime = curTimeDate.getTime() / 1000;
-                long curTime2 = curTime - 240;
-
-                while (rs.next()) {
-                  trafficObject = new JsonObject();
-
-                  endtime = (rs.getString(1)).substring(0,19);
-                  totalbytes = rs.getDouble(2);
-                  double[] data = new double[2];
-
-                  Date date = dateFormat.parse(endtime);
-                  time = date.getTime() / 1000;
-
-                  if (first == 0) {
-                    first = totalbytes;
-                    curTime = time;
-                  }
-
-                  if (time <= curTime && time >= curTime2) {}
-                  else
-                    break;
-
-                  data[0] = (double)cnt;
-                  data[1] = totalbytes/100000000 * 2;
-                  trafficArray.add(data);
-                  cnt = cnt + 1;
-                }
-
-                reply.putArray("statistics", trafficArray);
                 reply.putNumber("code", 200);
                 socket.emit(emitTo, reply);
 
@@ -552,8 +506,6 @@ public class MysqlHandler {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
               resToWeb(emitTo, "400", "realtimeOn: somethings were error");
-            } catch (ParseException e) {
-              e.printStackTrace();
             }
           } // Thread: run()
         }; // Thread thread = new Thread() {

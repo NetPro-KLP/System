@@ -39,6 +39,7 @@ public class Dispatcher {
 
         eventHandler.checkGeoipBlacklist();
         eventHandler.checkPacketTable();
+        eventHandler.checkBanUser();
 
         System.out.println("Firewall QueueListener ThreadPool Size: " + Integer.toString(queueNumThreads));
 
