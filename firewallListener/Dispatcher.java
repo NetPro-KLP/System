@@ -33,7 +33,7 @@ public class Dispatcher {
         dispatchNumThreads = Integer.parseInt(System.getProperty(THREADPROP, DISPATCHNUMTHREADS));
     }
     
-  public void dispatch(final ServerSocket serverSocket) {
+    public void dispatch(final ServerSocket serverSocket) {
         EventHandler eventHandler = new EventHandler("localhost", "root", 
             "klpsoma123");
 
@@ -64,7 +64,7 @@ public class Dispatcher {
         }
 
         packetDispatchLoop();
-  }
+    }
 	
     private void queueListenerLoop(ServerSocket serverSocket) {
         while( true ) {
