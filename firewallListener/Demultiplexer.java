@@ -17,7 +17,8 @@ public class Demultiplexer implements Runnable {
         this.code = receivedInfo.getCode();
         if (this.code.equals("exp")) {
           this.packet = receivedInfo.getPacket();
-        }
+        } else
+          this.socket = receivedInfo.getSocket();
     }
 	
     public void run() {

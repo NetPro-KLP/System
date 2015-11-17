@@ -15,7 +15,8 @@ public class QueueListenedInfo {
       this.packet = packet;
     }
 
-    public QueueListenedInfo(long firewallIp, String code) {
+    public QueueListenedInfo(Socket socket, long firewallIp, String code) {
+      this.socket = socket;
       this.firewallIp = Long.toString(firewallIp);
       this.code = code;
     }

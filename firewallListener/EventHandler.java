@@ -478,6 +478,7 @@ public class EventHandler {
           int outPattern9 = 0;
           int outPattern10 = 0;
           int rowNum = 0;
+          int i = 0;
           long from_ip = 0;
           long to_ip = 0;
 
@@ -522,13 +523,20 @@ public class EventHandler {
               else
                 ruleset.offer(rule + "|1");
             }
-          }/*
-          header = "rul|" + Integer.toString(ruleset.size());
+          }
+          header = "rul|" + Integer.toString(ruleset.size()) + "|";
+          for(; i < 254 - header.length(); i++)
+            header = header + "-";
+          System.out.println("rul header: " + header);
           outputStream.write(header.getBytes());
           while(ruleset.peek() != null) {
-            outputStream.write((ruleset.poll()).getBytes());
-          }*/
+            payload = ruleset.poll() + "|";
+            for (i = 0; i < 254 - payload.length(); i++)
+              payload = payload + "-";
+            outputStream.write(payload.getBytes());
+          }
 
+          System.out.println("rules_data finished");
           query = "SELECT country_code FROM GeoIP_Blacklist WHERE 1";
 
           rs = st.executeQuery(query);
@@ -540,8 +548,11 @@ public class EventHandler {
             country_code.offer(rs.getString(1));
           }
 
-          header = "geo|" + Integer.toString(country_code.size());
-          //outputStream.write(header.getBytes());
+          header = "geo|" + Integer.toString(country_code.size()) + "|";
+          for(i = 0; i < 254 - header.length(); i++)
+            header = header + "-";
+          outputStream.write(header.getBytes());
+          System.out.println("geo header: " + header);
 
           while(country_code.peek() != null) {
             country = country_code.poll();
@@ -557,16 +568,22 @@ public class EventHandler {
             rowNum = rs.getRow();
             rs.beforeFirst();
 
-            header = "geo|" + country + "|" + Integer.toString(rowNum);
-            //outputStream.write(header.getBytes());
+            header = "geo|" + country + "|" + Integer.toString(rowNum) + "|";
+            for(i = 0; i < 254 - header.length(); i++)
+              header = header + "-";
+            outputStream.write(header.getBytes());
+            System.out.println(country + " header: " + header);
 
             while(rs.next()) {
               from_ip = rs.getLong(1);
               to_ip = rs.getLong(2);
 
-              payload = Long.toString(from_ip) + "|" + Long.toString(to_ip);
-              //outputStream.write(payload.getBytes());
+              payload = Long.toString(from_ip) + "|" + Long.toString(to_ip) + "|";
+              for(i = 0; i < 254 - payload.length(); i++)
+                payload = payload + "-";
+              outputStream.write(payload.getBytes());
             }
+            System.out.println(country + " ip finished");
           }
 
           query = "SELECT ip FROM users WHERE status = 1";

@@ -356,7 +356,6 @@ public class MysqlHandler {
                 int warn = 0;
                 int totalDangerEachUser = 0;
                 int danger = 0;
-                int cnt = 0;
                 String endtime = null;
                 DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
                         + "HH:mm:ss");
@@ -389,19 +388,15 @@ public class MysqlHandler {
                     totalbytesEachUser = 0;
                     totalWarnEachUser = 0;
                     totalDangerEachUser = 0;
-                    cnt = 0;
                   }
 
-                  cnt = cnt + 1;
-                  if (cnt <= 20) {
-                    trafficObject = new JsonObject().putNumber("ip", ip);
-                    trafficObject.putNumber("status", status);
-                    trafficObject.putString("endtime", endtime);
-                    trafficObject.putNumber("danger", danger);
-                    trafficObject.putNumber("warn", warn);
-                    trafficObject.putNumber("trafficPercentage", traffic);
-                    trafficArray.addObject(trafficObject);
-                  }
+                  trafficObject = new JsonObject().putNumber("ip", ip);
+                  trafficObject.putNumber("status", status);
+                  trafficObject.putString("endtime", endtime);
+                  trafficObject.putNumber("danger", danger);
+                  trafficObject.putNumber("warn", warn);
+                  trafficObject.putNumber("trafficPercentage", traffic);
+                  trafficArray.addObject(trafficObject);
 
                   totalbytesEachUser = totalbytesEachUser + traffic;
                   totalWarnEachUser = totalWarnEachUser + warn;
@@ -460,19 +455,15 @@ public class MysqlHandler {
                       totalbytesEachUser = 0;
                       totalWarnEachUser = 0;
                       totalDangerEachUser = 0;
-                      cnt = 0;
                     }
 
-                    cnt = cnt + 1;
-                    if (cnt <= 20) {
-                      trafficObject = new JsonObject().putNumber("ip", ip);
-                      trafficObject.putNumber("status", status);
-                      trafficObject.putString("endtime", endtime);
-                      trafficObject.putNumber("danger", danger);
-                      trafficObject.putNumber("warn", warn);
-                      trafficObject.putNumber("trafficPercentage", traffic);
-                      trafficArray.addObject(trafficObject);
-                    }
+                    trafficObject = new JsonObject().putNumber("ip", ip);
+                    trafficObject.putNumber("status", status);
+                    trafficObject.putString("endtime", endtime);
+                    trafficObject.putNumber("danger", danger);
+                    trafficObject.putNumber("warn", warn);
+                    trafficObject.putNumber("trafficPercentage", traffic);
+                    trafficArray.addObject(trafficObject);
 
                     totalbytesEachUser = totalbytesEachUser + traffic;
                     totalWarnEachUser = totalWarnEachUser + warn;
@@ -920,13 +911,11 @@ public class MysqlHandler {
             try {
               java.sql.Statement st = getSt();
 
-              String barTcpQuery = "SELECT p.starttime, p.endtime, "
-                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
-                  + " WHERE p.tcpudp = 0 GROUP BY p.endtime ORDER BY p.endtime DESC";
+              String barTcpQuery = "SELECT endtime, totalbytes FROM packets"
+                  + " WHERE tcpudp = 0 GROUP BY endtime ORDER BY endtime DESC";
 
-              String barUdpQuery = "SELECT p.starttime, p.endtime, "
-                  + "SUM(p.totalbytes), SUM(p.danger), SUM(p.warn) FROM packets p"
-                  + " WHERE p.tcpudp = 1 GROUP BY p.endtime ORDER BY p.endtime DESC";
+              String barUdpQuery = "SELECT endtime, totalbytes FROM packets"
+                  + " WHERE tcpudp = 1 GROUP BY endtime ORDER BY endtime DESC";
 
               JsonObject reply = new JsonObject();
               ResultSet rs = null;
@@ -940,11 +929,6 @@ public class MysqlHandler {
               long time = 0;
               double totalbytesEachTime = 0;
               double totalbytes = 0;
-              int dangerEachTime = 0;
-              int danger = 0;
-              int warnEachTime = 0;
-              int warn = 0;
-              String starttime = null;
               String endtime = null;
               String preDate = null;
               Date date = null;
@@ -960,13 +944,9 @@ public class MysqlHandler {
               while (rs.next()) {
                 JsonObject tcpObject = new JsonObject();
 
-                starttime = rs.getString(1);
-                endtime = rs.getString(2);
-                totalbytes = rs.getDouble(3);
-                danger = rs.getInt(4);
-                warn = rs.getInt(5);
+                endtime = rs.getString(1);
+                totalbytes = rs.getDouble(2);
 
-                starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
 
                 String curtime = endtime.substring(11,13) + ":00:00";
@@ -990,15 +970,11 @@ public class MysqlHandler {
                   jsonArray = new JsonArray();
                   unitCnt = unitCnt + 1;
                   totalbytesEachTime = 0;
-                  dangerEachTime = 0;
-                  warnEachTime = 0;
                   preTime = curtime;
                   preDate = curdate;
                 }
 
                 totalbytesEachTime = totalbytesEachTime + totalbytes;
-                dangerEachTime = dangerEachTime + danger;
-                warnEachTime = warnEachTime + warn;
               }
 
               if (!preTime.equals("init")) {
@@ -1022,8 +998,6 @@ public class MysqlHandler {
 
               preTime = "init";
               totalbytesEachTime = 0;
-              dangerEachTime = 0;
-              warnEachTime = 0;
               preDate = null;
 
               jsonArray = new JsonArray();
@@ -1032,13 +1006,9 @@ public class MysqlHandler {
               while (rs.next()) {
                 JsonObject udpObject = new JsonObject();
 
-                starttime = rs.getString(1);
-                endtime = rs.getString(2);
-                totalbytes = rs.getDouble(3);
-                danger = rs.getInt(4);
-                warn = rs.getInt(5);
+                endtime = rs.getString(1);
+                totalbytes = rs.getDouble(2);
 
-                starttime = starttime.substring(0,19);
                 endtime = endtime.substring(0,19);
 
                 String curTime = endtime.substring(11,13) + ":00:00";
@@ -1061,15 +1031,11 @@ public class MysqlHandler {
 
                   jsonArray = new JsonArray();
                   totalbytesEachTime = 0;
-                  dangerEachTime = 0;
-                  warnEachTime = 0;
                   preTime = curTime;
                   preDate = curDate;
                 }
 
                 totalbytesEachTime = totalbytesEachTime + totalbytes;
-                dangerEachTime = dangerEachTime + danger;
-                warnEachTime = warnEachTime + warn;
               }
 
               if (!preTime.equals("init")) {
@@ -1090,15 +1056,13 @@ public class MysqlHandler {
                 String yesterday = sdf.format(date);
                 yesterday = yesterday.substring(0,11) + "00:00:00";
 
-                String backupTcpQuery = "SELECT starttime, endtime, SUM(totalbytes"
-                  + "), SUM(danger), SUM(warn) FROM backup_packets WHERE "
-                  + "(tcpudp = 0) AND (endtime >= '" + yesterday + "') GROUP"
-                  + " BY endtime ORDER BY endtime DESC";
+                String backupTcpQuery = "SELECT endtime, totalbytes FROM backup_"
+                  + "packets WHERE (tcpudp = 0) AND (endtime >= '" + yesterday
+                  + "') GROUP BY endtime ORDER BY endtime DESC";
 
-                String backupUdpQuery = "SELECT starttime, endtime, SUM(totalbytes"
-                  + "), SUM(danger), SUM(warn) FROM backup_packets WHERE "
-                  + "(tcpudp = 1) AND (endtime >= '" + yesterday + "') GROUP"
-                  + " BY endtime ORDER BY endtime DESC";
+                String backupUdpQuery = "SELECT endtime, totalbytes FROM backup_"
+                  + "packets WHERE (tcpudp = 1) AND (endtime >= '" + yesterday
+                  + "') GROUP BY endtime ORDER BY endtime DESC";
 
                 int preUnitCnt = unitCnt;
 
@@ -1109,8 +1073,6 @@ public class MysqlHandler {
 
                 preTime = "init";
                 totalbytesEachTime = 0;
-                dangerEachTime = 0;
-                warnEachTime = 0;
                 preDate = null;
 
                 jsonArray = new JsonArray();
@@ -1119,13 +1081,9 @@ public class MysqlHandler {
                 while (rs.next() && unitCnt < 24) {
                   JsonObject tcpObject = new JsonObject();
 
-                  starttime = rs.getString(1);
-                  endtime = rs.getString(2);
-                  totalbytes = rs.getDouble(3);
-                  danger = rs.getInt(4);
-                  warn = rs.getInt(5);
+                  endtime = rs.getString(1);
+                  totalbytes = rs.getDouble(2);
 
-                  starttime = starttime.substring(0,19);
                   endtime = endtime.substring(0,19);
 
                   String curtime = endtime.substring(11,13) + ":00:00";
@@ -1149,15 +1107,11 @@ public class MysqlHandler {
                     jsonArray = new JsonArray();
                     unitCnt = unitCnt + 1;
                     totalbytesEachTime = 0;
-                    dangerEachTime = 0;
-                    warnEachTime = 0;
                     preTime = curtime;
                     preDate = curdate;
                   }
 
                   totalbytesEachTime = totalbytesEachTime + totalbytes;
-                  dangerEachTime = dangerEachTime + danger;
-                  warnEachTime = warnEachTime + warn;
                 }
 
                 if (!preTime.equals("init") && unitCnt <= 24) {
@@ -1187,8 +1141,6 @@ public class MysqlHandler {
 
                 preTime = "init";
                 totalbytesEachTime = 0;
-                dangerEachTime = 0;
-                warnEachTime = 0;
                 preDate = null;
 
                 jsonArray = new JsonArray();
@@ -1197,13 +1149,9 @@ public class MysqlHandler {
                 while (rs.next() && unitCnt < 24) {
                   JsonObject udpObject = new JsonObject();
 
-                  starttime = rs.getString(1);
-                  endtime = rs.getString(2);
-                  totalbytes = rs.getDouble(3);
-                  danger = rs.getInt(4);
-                  warn = rs.getInt(5);
+                  endtime = rs.getString(1);
+                  totalbytes = rs.getDouble(2);
 
-                  starttime = starttime.substring(0,19);
                   endtime = endtime.substring(0,19);
 
                   String curtime = endtime.substring(11,13) + ":00:00";
@@ -1227,15 +1175,11 @@ public class MysqlHandler {
                     jsonArray = new JsonArray();
                     unitCnt = unitCnt + 1;
                     totalbytesEachTime = 0;
-                    dangerEachTime = 0;
-                    warnEachTime = 0;
                     preTime = curtime;
                     preDate = curdate;
                   }
 
                   totalbytesEachTime = totalbytesEachTime + totalbytes;
-                  dangerEachTime = dangerEachTime + danger;
-                  warnEachTime = warnEachTime + warn;
                 }
 
                 if (!preTime.equals("init") && unitCnt <= 24) {
@@ -1458,22 +1402,22 @@ public class MysqlHandler {
               String week = sdf.format(date);
               week = week.substring(0,11) + "00:00:00";
 
-              String outboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+              String outboundQuery = "SELECT p.totalbytes, p.warn, "
+                + "p.danger, p.endtime FROM packets p "
                 + "JOIN users u ON u.ip = p.source_ip GROUP BY p.endtime "
                 + "ORDER BY p.endtime DESC";
 
-              String inboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                + "SUM(p.danger), p.starttime, p.endtime FROM packets p "
+              String inboundQuery = "SELECT p.totalbytes, p.warn, "
+                + "p.danger, p.endtime FROM packets p "
                 + "JOIN users u ON u.ip = p.destination_ip GROUP BY p.endtime "
                 + "ORDER BY p.endtime DESC";
-              String backupOutboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+              String backupOutboundQuery = "SELECT p.totalbytes, p.warn, "
+                + "p.danger, p.endtime FROM backup_packets p "
                 + "JOIN users u ON (u.ip = p.source_ip) AND (p.endtime >= '"
                 + week + "') GROUP BY p.endtime ORDER BY p.endtime DESC";
 
-              String backupInboundQuery = "SELECT SUM(p.totalbytes), SUM(p.warn), "
-                + "SUM(p.danger), p.starttime, p.endtime FROM backup_packets p "
+              String backupInboundQuery = "SELECT p.totalbytes, p.warn, "
+                + "p.danger, p.endtime FROM backup_packets p "
                 + "JOIN users u ON (u.ip = p.destination_ip) AND (p.endtime >="
                 + " '" + week + "') GROUP BY p.endtime ORDER BY p.endtime DESC";
 
@@ -1490,7 +1434,6 @@ public class MysqlHandler {
               int warnEachTime = 0;
               int warn = 0;
               int i = 7;
-              String starttime = null;
               String endtime = null;
               String preDate = null;
               DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd "
@@ -1504,8 +1447,7 @@ public class MysqlHandler {
                 totalbytes = rs.getDouble(1);
                 warn = rs.getInt(2);
                 danger = rs.getInt(3);
-                starttime = (rs.getString(4)).substring(0,19);
-                endtime = (rs.getString(5)).substring(0,19);
+                endtime = (rs.getString(4)).substring(0,19);
 
                 String curtime = endtime.substring(8,10) + " 00:00:00";
                 String curdate = endtime.substring(0,8);
@@ -1552,8 +1494,7 @@ public class MysqlHandler {
                 totalbytes = rs.getDouble(1);
                 warn = rs.getInt(2);
                 danger = rs.getInt(3);
-                starttime = (rs.getString(4)).substring(0,19);
-                endtime = (rs.getString(5)).substring(0,19);
+                endtime = (rs.getString(4)).substring(0,19);
 
                 String curtime = endtime.substring(8,10) + " 00:00:00";
                 String curdate = endtime.substring(0,8);
@@ -1595,8 +1536,7 @@ public class MysqlHandler {
                 totalbytes = rs.getDouble(1);
                 warn = rs.getInt(2);
                 danger = rs.getInt(3);
-                starttime = (rs.getString(4)).substring(0,19);
-                endtime = (rs.getString(5)).substring(0,19);
+                endtime = (rs.getString(4)).substring(0,19);
 
                 String curtime = endtime.substring(8,10) + " 00:00:00";
                 String curdate = endtime.substring(0,8);
@@ -1647,8 +1587,7 @@ public class MysqlHandler {
                 totalbytes = rs.getDouble(1);
                 warn = rs.getInt(2);
                 danger = rs.getInt(3);
-                starttime = (rs.getString(4)).substring(0,19);
-                endtime = (rs.getString(5)).substring(0,19);
+                endtime = (rs.getString(4)).substring(0,19);
 
                 String curtime = endtime.substring(8,10) + " 00:00:00";
                 String curdate = endtime.substring(0,8);

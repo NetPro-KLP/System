@@ -94,7 +94,7 @@ public class Dispatcher {
                 for (i = 0; i < rowNum; i++) {
                   if (code.equals("ini")) {
                     QueueListenedInfo queueListenedInfo = new QueueListenedInfo(
-                        firewallIp, code);
+                        socket, firewallIp, code);
                     queue.offer(queueListenedInfo);
                   } else if (code.equals("exp") || code.equals("alm")) {
                     buffer = new byte[PAYLOAD_SIZE];
