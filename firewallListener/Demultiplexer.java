@@ -12,15 +12,15 @@ public class Demultiplexer implements Runnable {
     private String code;
     private String packet;
 	
-	public Demultiplexer(QueueListenedInfo receivedInfo) {
+    public Demultiplexer(QueueListenedInfo receivedInfo) {
         this.firewallIp = receivedInfo.getFirewallIp();
         this.code = receivedInfo.getCode();
         if (this.code.equals("exp")) {
           this.packet = receivedInfo.getPacket();
         }
-	}
+    }
 	
-	public void run() {
+    public void run() {
 
         EventHandler eventHandler = new EventHandler("localhost",
             "root", "klpsoma123");
@@ -42,5 +42,5 @@ public class Demultiplexer implements Runnable {
             default:
                 break;
         }
-	}
+    }
 }
