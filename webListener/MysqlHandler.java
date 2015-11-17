@@ -324,11 +324,14 @@ public class MysqlHandler {
           public void run() {
             java.sql.Statement st = getSt();
 
-            String trafficQuery = "SELECT u.idx, u.ip, u.status, p.endtime"
-              + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
-              + " FROM users u JOIN packets p ON u.ip = p.source_ip"
-              + " OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime"
-              + " ORDER BY u.idx, p.endtime DESC";
+            String trafficQuery = "SELECT idx, ip, status, endtime, total"
+              + "bytes, danger, warn FROM (SELECT u.idx, u.ip, u.status, "
+              + "p.endtime, p.totalbytes, p.danger, p.warn"
+              + ", @endtime_rank := IF(@current_endtime = p.endtime, @endt"
+              + "ime_rank + 1, 1) AS endtime_rank, @current_endtime := p."
+              + "endtime FROM users u JOIN packets p ON u.ip = p.source_ip "
+              + "OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime ORDER"
+              + " BY u.idx, p.endtime DESC) ranked WHERE endtime_rank <= 20";
 
             try {
                 JsonObject reply = new JsonObject();
@@ -415,76 +418,65 @@ public class MysqlHandler {
                   trafficArray.addObject(trafficObject);
                   reply.putArray(Integer.toString(preIdx), trafficArray);
                 } else {
-                  String currentQuery = "SELECT endtime FROM backup_packets"
-                    + " WHERE 1 ORDER BY endtime DESC LIMIT 1";
+                  trafficQuery = "SELECT idx, ip, status, endtime, total"
+                          + "bytes, danger, warn FROM (SELECT u.idx, u.ip, u.status, "
+                          + "p.endtime, p.totalbytes, p.danger, p.warn"
+                          + ", @endtime_rank := IF(@current_endtime = p.endtime, @endt"
+                          + "ime_rank + 1, 1) AS endtime_rank, @current_endtime := p."
+                          + "endtime FROM users u JOIN backup_packets p ON u.ip = p.source_ip "
+                          + "OR u.ip = p.destination_ip GROUP BY u.idx, p.endtime ORDER"
+                          + " BY u.idx, p.endtime DESC) ranked WHERE endtime_rank <= 20";
 
-                  rs = st.executeQuery(currentQuery);
+                  rs = st.executeQuery(trafficQuery);
 
-                  if(st.execute(currentQuery))
+                  if(st.execute(trafficQuery))
                     rs = st.getResultSet();
 
-                  if (rs.next()) {
-                    String current = (rs.getString(1)).substring(0,11)
-                      + "00:00:00";
+                  while(rs.next()) {
+                    idx = rs.getInt(1);
+                    ip = rs.getLong(2);
+                    status = rs.getInt(3);
+                    endtime = (rs.getString(4)).substring(0,19);
+                    traffic = rs.getLong(5);
+                    danger = rs.getInt(6);
+                    warn = rs.getInt(7);
 
-                    trafficQuery = "SELECT u.idx, u.ip, u.status, p.endtime"
-                      + ", SUM(p.totalbytes), SUM(p.danger), SUM(p.warn)"
-                      + " FROM users u JOIN backup_packets p ON (u.ip = "
-                      + "p.source_ip OR u.ip = p.destination_ip) AND (endtime "
-                      + ">= '" + current + "') GROUP BY u.idx, p.endtime"
-                      + " ORDER BY u.idx, p.endtime DESC";
-
-                    rs = st.executeQuery(trafficQuery);
-
-                    if(st.execute(trafficQuery))
-                      rs = st.getResultSet();
-
-                    while(rs.next()) {
-                      idx = rs.getInt(1);
-                      ip = rs.getLong(2);
-                      status = rs.getInt(3);
-                      endtime = (rs.getString(4)).substring(0,19);
-                      traffic = rs.getLong(5);
-                      danger = rs.getInt(6);
-                      warn = rs.getInt(7);
-
-                      if (preIdx == -1) {
-                        preIdx = idx;
-                      }
-
-                      if (preIdx != idx) {
-                        trafficObject = new JsonObject().putNumber("totalbytes",
-                          totalbytesEachUser);
-                        trafficObject.putNumber("totalwarn", totalWarnEachUser);
-                        trafficObject.putNumber("totaldanger",
-                          totalDangerEachUser);
-
-                        trafficArray.addObject(trafficObject);
-                        reply.putArray(Integer.toString(preIdx), trafficArray);
-
-                        trafficArray = new JsonArray();
-                        preIdx = idx;
-                        totalbytesEachUser = 0;
-                        totalWarnEachUser = 0;
-                        totalDangerEachUser = 0;
-                        cnt = 0;
-                      }
-
-                      cnt = cnt + 1;
-                      if (cnt <= 20) {
-                        trafficObject = new JsonObject().putNumber("ip", ip);
-                        trafficObject.putNumber("status", status);
-                        trafficObject.putString("endtime", endtime);
-                        trafficObject.putNumber("danger", danger);
-                        trafficObject.putNumber("warn", warn);
-                        trafficObject.putNumber("trafficPercentage", traffic);
-                        trafficArray.addObject(trafficObject);
-                      }
-
-                      totalbytesEachUser = totalbytesEachUser + traffic;
-                      totalWarnEachUser = totalWarnEachUser + warn;
-                      totalDangerEachUser = totalDangerEachUser + danger;
+                    if (preIdx == -1) {
+                      preIdx = idx;
                     }
+
+                    if (preIdx != idx) {
+                      trafficObject = new JsonObject().putNumber("totalbytes",
+                        totalbytesEachUser);
+                      trafficObject.putNumber("totalwarn", totalWarnEachUser);
+                      trafficObject.putNumber("totaldanger",
+                        totalDangerEachUser);
+
+                      trafficArray.addObject(trafficObject);
+                      reply.putArray(Integer.toString(preIdx), trafficArray);
+
+                      trafficArray = new JsonArray();
+                      preIdx = idx;
+                      totalbytesEachUser = 0;
+                      totalWarnEachUser = 0;
+                      totalDangerEachUser = 0;
+                      cnt = 0;
+                    }
+
+                    cnt = cnt + 1;
+                    if (cnt <= 20) {
+                      trafficObject = new JsonObject().putNumber("ip", ip);
+                      trafficObject.putNumber("status", status);
+                      trafficObject.putString("endtime", endtime);
+                      trafficObject.putNumber("danger", danger);
+                      trafficObject.putNumber("warn", warn);
+                      trafficObject.putNumber("trafficPercentage", traffic);
+                      trafficArray.addObject(trafficObject);
+                    }
+
+                    totalbytesEachUser = totalbytesEachUser + traffic;
+                    totalWarnEachUser = totalWarnEachUser + warn;
+                    totalDangerEachUser = totalDangerEachUser + danger;
                   }
 
                   if (preIdx != -1) {
@@ -501,7 +493,6 @@ public class MysqlHandler {
 
                 reply.putNumber("code", 200);
                 socket.emit(emitTo, reply);
-
             } catch (SQLException sqex) {
               System.out.println("SQLException: " + sqex.getMessage());
               System.out.println("SQLState: " + sqex.getSQLState());
